@@ -62,7 +62,7 @@ def main():
 
     # H-score of the original network
     H = 1 - (float(len(C)) / len(C_f))
-    print C, C_f, H
+    print '%d\t%f'%(len(C), H)
 
 if __name__ == '__main__':
     main()
