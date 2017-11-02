@@ -37,9 +37,10 @@ def rp_model(S, M, T, alpha, d_in):
     G.add_nodes_from(xrange(S + M + T))
 
     # Source ranks array
-    source_ranks = np.array(G.nodes())
+    source_ranks = np.arange(S, dtype=np.uint32)
     # Intermediate ranks array
-    inter_ranks = np.array()
+    inter_ranks = np.zeros(M, dtype=np.uint32)
+    inter_indices = np.arange(M)
     # Create connections for the M intermediates
     for m in xrange(M):
         # Increase source ranks by one
@@ -50,17 +51,17 @@ def rp_model(S, M, T, alpha, d_in):
         np.random.shuffle(source_ranks)
         # Increase intermediate ranks by one
         # for calculating the probabilities
-        inter_ranks = inter_ranks + 1
+        inter_ranks = inter_ranks + (inter_indices < m)
         # Ranks of all the vertices for creating this vertex
-        all_ranks = np.concatenate(source_ranks, inter_ranks)
-        numerators = np.float_power(all_ranks, -1.0 * alpha)
+        all_ranks = np.concatenate((source_ranks, inter_ranks)).astype(np.float)
+        with np.errstate(divide='ignore'):
+            numerators = np.power(all_ranks, -1.0 * alpha)
+            numerators[~np.isfinite(numerators)] = 0.0
         # Probability of connecting to every older vertex
         probabilities = numerators / np.sum(numerators)
         # Pick unique source vertices and add incoming edges from them
-        for u in np.random.choice(S + m - 1, size=d_in(), replace=False, p=probabilities):
+        for u in np.random.choice(S + M, size=d_in(), replace=False, p=probabilities):
             G.add_edge(u, S + m)
-        # Now, add the rank for this vertex to the intermediate ranks
-        np.append(inter_ranks, 0)
 
     # Increase ranks by one for calculating the probabilities
     source_ranks = source_ranks + 1
@@ -68,15 +69,15 @@ def rp_model(S, M, T, alpha, d_in):
     # Randomly assign ranks M through
     # M + (S-1) to the sources
     np.random.shuffle(source_ranks)
-    all_ranks = np.concactenate(source_ranks, inter_ranks)
-    numerators = np.float_power(all_ranks, -1.0 * alpha)
+    all_ranks = np.concatenate((source_ranks, inter_ranks)).astype(np.float)
+    numerators = np.power(all_ranks, -1.0 * alpha)
     # Probability of connecting to every older vertex
     probabilities = numerators / np.sum(numerators)
 
     # Create connections for the T targets in a batch
     for t in xrange(T):
         # Pick unique source vertices and add incoming edges from them
-        for u in np.random.choice(S + M + t - 1, size=d_in(), replace=False, p=probabilities):
+        for u in np.random.choice(S + M, size=d_in(), replace=False, p=probabilities):
             G.add_edge(u, S + M + t)
 
     return G

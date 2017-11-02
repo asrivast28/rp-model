@@ -17,7 +17,7 @@ def _compute_num_paths(vertex, neighbor_iter, degree, pathtype):
         this_level = np.array(list(next_level))
     return P_v
 
-def path_centrality(G, source, target, in_degree, out_degree, pathtype=np.uint32):
+def path_centrality(G, source, target, in_degree, out_degree, pathtype=np.uint64):
     """
     @brief  Computes path centrality values for all the vertices in a network. 
     

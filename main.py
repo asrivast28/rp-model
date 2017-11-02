@@ -1,4 +1,5 @@
 import argparse
+import numpy as np
 
 import network
 import analysis
@@ -41,7 +42,6 @@ def main():
     # Parse the command line arguments.
     args = parse_args()
     # Seed the PRNG
-    import numpy as np
     np.random.seed(args.seed)
 
     # Read the network if a file name is provided
