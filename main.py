@@ -47,18 +47,18 @@ def main():
     # Read the network if a file name is provided
     # Otherwise, create a network using the RP-model
     if args.file:
-        G = network.read(args.file)
+        G, source, target = network.read(args.file)
     else:
         intermediates = args.vertices - (args.sources + args.targets)
-        G = network.rp_model(args.sources, intermediates, args.targets, args.alpha, args.d_in)
+        G, source, target = network.rp_model(args.sources, intermediates, args.targets, args.alpha, args.d_in)
 
     # Get the core vertices for the network
-    C = analysis.core_vertices(G, args.tau)
+    C = analysis.core_vertices(G, source, target, args.tau)
 
     # Get the flattened network corresponding to the original network
-    G_f = network.flatten(G)
+    G_f = network.flatten(G, source, target)
     # Get the core vertices for the flattened network
-    C_f = analysis.core_vertices(G_f, args.tau)
+    C_f = analysis.core_vertices(G_f, source, target, args.tau)
 
     # H-score of the original network
     H = 1 - (float(len(C)) / len(C_f))

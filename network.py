@@ -2,6 +2,16 @@ import networkx as nx
 import numpy as np
 
 
+def datatype(value_max):
+    """
+    @brief  Returns the unsigned NumPy datatype suitable for storing value_max.
+    """
+    from bisect import bisect
+    all_dtypes = (np.uint8, np.uint16, np.uint32, np.uint64)
+    dtype_max = [np.iinfo(dtype).max for dtype in all_dtypes]
+    dtype_max.insert(0, 0)
+    return all_dtypes[bisect(dtype_max, value_max) - 1]
+
 def read(filename):
     """
     @brief  Reads a network from the file in edge-list format.
@@ -17,7 +27,10 @@ def read(filename):
         for edge in f.xreadlines():
             if not edge.startswith('%'):
                 G.add_edge(*tuple(int(u) for u in edge.split()))
-    return G
+    vertex = np.arange(G.number_of_nodes(), dtype=datatype(G.number_of_nodes()))
+    source = np.vectorize(lambda v : G.in_degree(v) == 0, otypes=[np.bool])(vertex)
+    target = np.vectorize(lambda v : G.out_degree(v) == 0, otypes=[np.bool])(vertex)
+    return G, source, target
 
 def rp_model(S, M, T, alpha, d_in):
     """
@@ -34,12 +47,15 @@ def rp_model(S, M, T, alpha, d_in):
     # Create an empty directed network
     G = nx.DiGraph()
     # Add all the vertices to the network
-    G.add_nodes_from(xrange(S + M + T))
+    V = S + M + T
+    vertextype = datatype(V)
+    vertex = np.arange(V, dtype=vertextype)
+    G.add_nodes_from(vertex)
 
     # Source ranks array
-    source_ranks = np.arange(S, dtype=np.uint32)
+    source_ranks = np.arange(S, dtype=vertextype)
     # Intermediate ranks array
-    inter_ranks = np.zeros(M, dtype=np.uint32)
+    inter_ranks = np.zeros(M, dtype=vertextype)
     inter_indices = np.arange(M)
     # Create connections for the M intermediates
     for m in xrange(M):
@@ -80,7 +96,10 @@ def rp_model(S, M, T, alpha, d_in):
         for u in np.random.choice(S + M, size=d_in(), replace=False, p=probabilities):
             G.add_edge(u, S + M + t)
 
-    return G
+    source = (vertex < S)
+    source[list(s for s in xrange(S) if G.out_degree(s) == 0)] = False
+    target = (vertex >= (S + M))
+    return G, source, target
 
 def count_simple_paths(G, s, t, visited=None, npath=None, pathtype=np.uint64):
     """
@@ -100,20 +119,22 @@ def count_simple_paths(G, s, t, visited=None, npath=None, pathtype=np.uint64):
     if npath is None:
         npath = np.zeros(G.number_of_nodes(), dtype=pathtype)
     if s == t:
-        return 1
+        visited[s] = True
+        npath[s] = 1
     else:
         # assume sum returns 0 if s has no children
         if not visited[s]:
             visited[s] = True
             npath[s] = sum(count_simple_paths(G, u, t, visited, npath) for u in G.successors(s))
-        return npath[s]
+    return npath[s]
 
-def flatten(G, vertextype=np.uint32):
+def flatten(G, source, target):
     """
     @brief  Flattens the given dependency network.
 
     @param G           nx.DiGraph representation of the network.
-    @param vertextype  NumPy datatype given as hint for storing simple paths.
+    @param source      NumPy array of type bool with 1 for every source vertex.
+    @param target      NumPy array of type bool with 1 for every target vertex.
 
     @return  nx.MultiDiGraph representation of the flattened dependency network.
     """
@@ -121,10 +142,6 @@ def flatten(G, vertextype=np.uint32):
     G_f = nx.MultiDiGraph()
     # Add the same nodes as the original network
     G_f.add_nodes_from(xrange(G.number_of_nodes()))
-
-    # Find sources and targets in the original network
-    source = np.array(list(G.in_degree(n) == 0 for n in xrange(G.number_of_nodes())), dtype=np.bool)
-    target = np.array(list(G.out_degree(n) == 0 for n in xrange(G.number_of_nodes())), dtype=np.bool)
 
     # Create the flat dependency network
     for s in np.where(source)[0]:
