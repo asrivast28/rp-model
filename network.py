@@ -82,7 +82,7 @@ def rp_model(S, M, T, alpha, d_in):
 
     return G
 
-def count_simple_paths(G, s, t, npath=None, pathtype=np.uint32):
+def count_simple_paths(G, s, t, visited=None, npath=None, pathtype=np.uint64):
     """
     @brief  Counts the number of simple s-t paths in the network.
             Modified the code from https://cs.stackexchange.com/q/3087
@@ -95,14 +95,17 @@ def count_simple_paths(G, s, t, npath=None, pathtype=np.uint32):
 
     @return  Number of paths from s to t in the given network.
     """
+    if visited is None:
+        visited = np.zeros(G.number_of_nodes(), dtype=np.bool)
     if npath is None:
         npath = np.zeros(G.number_of_nodes(), dtype=pathtype)
     if s == t:
         return 1
     else:
         # assume sum returns 0 if s has no children
-        if npath[s] == 0:
-            npath[s] = sum(count_simple_paths(G, u, t, npath) for u in G.successors(s))
+        if not visited[s]:
+            visited[s] = True
+            npath[s] = sum(count_simple_paths(G, u, t, visited, npath) for u in G.successors(s))
         return npath[s]
 
 def flatten(G, vertextype=np.uint32):

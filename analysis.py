@@ -52,10 +52,10 @@ def remove_vertex(G, vertex, in_degree, out_degree):
     @param in_degree   NumPy array containing in-degree for every vertex.
     @param out_degree  NumPy array containing out-degree for every vertex.
     """
-    for u, v in G.in_edges_iter(vertex):
-        out_degree[u] -= 1
-    for u, v in G.out_edges_iter(vertex):
-        in_degree[v] -= 1
+    for p in G.predecessors_iter(vertex):
+        out_degree[p] -= 1
+    for s in G.successors_iter(vertex):
+        in_degree[s] -= 1
     in_degree[vertex] = 0
     out_degree[vertex] = 0
     G.remove_node(vertex)
@@ -103,10 +103,10 @@ def core_vertices(G, tau, vertextype=np.uint32):
             # Check if two or more vertices are on the same path
             for vertex in candidate_vertices:
                 _G = G.copy()
-                _in_degrees = np.copy(in_degree)
-                _out_degrees = np.copy(out_degree)
-                remove_vertex(_G, vertex, _in_degrees, _out_degrees)
-                _centrality = path_centrality(_G, source, target, _in_degrees, _out_degrees)
+                _in_degree = np.copy(in_degree)
+                _out_degree = np.copy(out_degree)
+                remove_vertex(_G, vertex, _in_degree, _out_degree)
+                _centrality = path_centrality(_G, source, target, _in_degree, _out_degree)
                 neighbors = set([vertex])
                 for other in candidate_vertices:
                     if other != vertex and _centrality[other] == 0:
