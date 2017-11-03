@@ -64,9 +64,9 @@ def remove_vertex(G, vertex, source, target, in_degree, out_degree):
     @param in_degree   NumPy array containing in-degree for every vertex.
     @param out_degree  NumPy array containing out-degree for every vertex.
     """
-    for p in G.predecessors_iter(vertex):
+    for p, v in G.in_edges_iter(vertex):
         out_degree[p] -= 1
-    for s in G.successors_iter(vertex):
+    for v, s in G.out_edges_iter(vertex):
         in_degree[s] -= 1
     in_degree[vertex] = 0
     out_degree[vertex] = 0

@@ -125,7 +125,7 @@ def count_simple_paths(G, s, t, visited=None, npath=None, pathtype=np.uint64):
         # assume sum returns 0 if s has no children
         if not visited[s]:
             visited[s] = True
-            npath[s] = sum(count_simple_paths(G, u, t, visited, npath) for u in G.successors(s))
+            npath[s] = sum(count_simple_paths(G, u, t, visited, npath) for u in G.successors_iter(s))
     return npath[s]
 
 def flatten(G, source, target):
