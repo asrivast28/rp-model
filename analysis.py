@@ -19,15 +19,15 @@ def _compute_num_paths(vertex, neighbor_iter, degree, pathtype):
 
 def path_centrality(G, source, target, in_degree, out_degree, pathtype=np.uint64):
     """
-    @brief  Computes path centrality values for all the vertices in a network. 
-    
+    @brief  Computes path centrality values for all the vertices in a network.
+
     @param G           nx.DiGraph or nx.MultiDiGraph representation of the network.
     @param source      NumPy array of type bool with 1 for every source vertex.
     @param target      NumPy array of type bool with 1 for every target vertex.
     @param in_degree   NumPy array containing in-degree for every vertex.
     @param out_degree  NumPy array containing out-degree for every vertex.
-    @param pathtype    NumPy datatype provided as a hint for storing centrality values. 
-    
+    @param pathtype    NumPy datatype provided as a hint for storing centrality values.
+
     @return  A NumPy array containg centrality value for every vertex in the given network.
     """
     source = source & (out_degree > 0)
@@ -46,8 +46,8 @@ def path_centrality(G, source, target, in_degree, out_degree, pathtype=np.uint64
 def remove_vertex(G, vertex, in_degree, out_degree):
     """
     @brief  Removes all the edges to and from the given vertex in the given network.
-    
-    @param G           nx.DiGraph representation of the network. 
+
+    @param G           nx.DiGraph representation of the network.
     @param vertex      Vertex to be removed from the network.
     @param in_degree   NumPy array containing in-degree for every vertex.
     @param out_degree  NumPy array containing out-degree for every vertex.
@@ -64,16 +64,16 @@ def remove_vertex(G, vertex, in_degree, out_degree):
 def core_vertices(G, tau, vertextype=np.uint32):
     """
     @brief  Greedily finds core vertices in the given network.
-    
+
     @param G           nx.DiGraph or nx.MultiDiGraph representation of the network.
     @param tau         Fraction of S-T paths to be covered by the core vertices.
     @param vertextype  NumPy datatype provided as a hint for storing degrees.
-    
+
     @return  List containing all the core vertices.
     """
     G = G.copy()
 
-    # Compute initial in and out degree for the network 
+    # Compute initial in and out degree for the network
     in_degree = np.array(list(G.in_degree(n) for n in xrange(G.number_of_nodes())), dtype=vertextype)
     out_degree = np.array(list(G.out_degree(n) for n in xrange(G.number_of_nodes())), dtype=vertextype)
 

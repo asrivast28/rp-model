@@ -5,9 +5,9 @@ import numpy as np
 def read(filename):
     """
     @brief  Reads a network from the file in edge-list format.
-    
+
     @param filename  Name of the file to be read.
-    
+
     @return  A nx.DiGraph instance of the read network.
     """
     # initialize a graph
@@ -21,14 +21,14 @@ def read(filename):
 
 def rp_model(S, M, T, alpha, d_in):
     """
-    @brief  Creates a network using the RP-model. 
-    
+    @brief  Creates a network using the RP-model.
+
     @param S      Number of source vertices.
     @param M      Number of intermediate vertices.
     @param T      Number of target vertices.
     @param alpha  Preference for reuse.
     @param d_in   Function that generates in-degrees.
-    
+
     @return  A nx.DiGraph instance of the generated network.
     """
     # Create an empty directed network
@@ -84,16 +84,16 @@ def rp_model(S, M, T, alpha, d_in):
 
 def count_simple_paths(G, s, t, npath=None, pathtype=np.uint32):
     """
-    @brief  Counts the number of simple s-t paths in the network. 
-            Modified the code from https://cs.stackexchange.com/q/3087 
-    
+    @brief  Counts the number of simple s-t paths in the network.
+            Modified the code from https://cs.stackexchange.com/q/3087
+
     @param G         nx.DiGraph representation of the network.
     @param s         Source vertex in the network.
     @param t         Target vertex in the network.
-    @param npath     Number of paths from every vertex to t. 
+    @param npath     Number of paths from every vertex to t.
     @param pathtype  NumPy datatype provided as a hint for storing the path counts.
-    
-    @return  Number of paths from s to t in the given network. 
+
+    @return  Number of paths from s to t in the given network.
     """
     if npath is None:
         npath = np.zeros(G.number_of_nodes(), dtype=pathtype)
@@ -107,12 +107,12 @@ def count_simple_paths(G, s, t, npath=None, pathtype=np.uint32):
 
 def flatten(G, vertextype=np.uint32):
     """
-    @brief  Flattens the given dependency network. 
-    
+    @brief  Flattens the given dependency network.
+
     @param G           nx.DiGraph representation of the network.
-    @param vertextype  NumPy datatype given as hint for storing simple paths. 
-    
-    @return  nx.MultiDiGraph representation of the flattened dependency network. 
+    @param vertextype  NumPy datatype given as hint for storing simple paths.
+
+    @return  nx.MultiDiGraph representation of the flattened dependency network.
     """
     # Create a directed flat network which allows parallel edges
     G_f = nx.MultiDiGraph()

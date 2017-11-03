@@ -7,9 +7,9 @@ import analysis
 
 def parse_args():
     """
-    @brief  Parses command line arguments. 
-    
-    @return  Structure containing parsed arguments. 
+    @brief  Parses command line arguments.
+
+    @return  Structure containing parsed arguments.
     """
     parser = argparse.ArgumentParser(description = 'Create a network as per RP-model and analyze it.')
     parser.add_argument('--file', '-f', metavar = 'FILE', type = str, help = 'name of the file from which the network is read')
@@ -37,7 +37,7 @@ def parse_args():
 
 def main():
     """
-    @brief  Main function. 
+    @brief  Main function.
     """
     # Parse the command line arguments.
     args = parse_args()
@@ -45,7 +45,7 @@ def main():
     np.random.seed(args.seed)
 
     # Read the network if a file name is provided
-    # Otherwise, create a network using the RP-model 
+    # Otherwise, create a network using the RP-model
     if args.file:
         G = network.read(args.file)
     else:
