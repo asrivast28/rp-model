@@ -109,13 +109,14 @@ def rp_model(S, M, T, alpha, d_in, out):
             tf.write('\n'.join(str(t) for t in np.where(target)[0]))
     return G, source, target
 
-def flatten(G, source, target):
+def flatten(G, source, target, datatype=np.uint64):
     """
     @brief  Flattens the given dependency network.
 
-    @param G           nx.DiGraph representation of the network.
-    @param source      NumPy array of type bool with 1 for every source vertex.
-    @param target      NumPy array of type bool with 1 for every target vertex.
+    @param G         nx.DiGraph representation of the network.
+    @param source    NumPy array of type bool with 1 for every source vertex.
+    @param target    NumPy array of type bool with 1 for every target vertex.
+    @param datatype  NumPy datatype provided as a hint for storage.
 
     @return  nx.MultiDiGraph representation of the flattened dependency network.
     """

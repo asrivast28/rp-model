@@ -57,7 +57,7 @@ def main():
     C = analysis.core_vertices(G, source, target, args.tau, datatype=np.uint32)
 
     # Get the flattened network corresponding to the original network
-    G_f = network.flatten(G, source, target)
+    G_f = network.flatten(G, source, target, datatype=np.uint32)
     # Get the core vertices for the flattened network
     C_f = analysis.core_vertices(G_f, source, target, args.tau, datatype=np.uint32)
 
