@@ -32,7 +32,7 @@ def read(filename):
     target = np.vectorize(lambda v : G.out_degree(v) == 0, otypes=[np.bool])(vertex)
     return G, source, target
 
-def rp_model(S, M, T, alpha, d_in):
+def rp_model(S, M, T, alpha, d_in, out):
     """
     @brief  Creates a network using the RP-model.
 
@@ -41,6 +41,7 @@ def rp_model(S, M, T, alpha, d_in):
     @param T      Number of target vertices.
     @param alpha  Preference for reuse.
     @param d_in   Function that generates in-degrees.
+    @param out    Prefix of the files to which the network is written.
 
     @return  A nx.DiGraph instance of the generated network.
     """
@@ -99,6 +100,13 @@ def rp_model(S, M, T, alpha, d_in):
     source = (vertex < S)
     source[list(s for s in xrange(S) if G.out_degree(s) == 0)] = False
     target = (vertex >= (S + M))
+    if out is not None:
+        with open('%s_links.txt'%out, 'wb') as elf:
+            nx.write_edgelist(G, elf, data=False)
+        with open('%s_sources.txt'%out, 'wb') as sf:
+            sf.write('\n'.join(str(s) for s in np.where(source)[0]))
+        with open('%s_targets.txt'%out, 'wb') as tf:
+            tf.write('\n'.join(str(t) for t in np.where(target)[0]))
     return G, source, target
 
 def count_simple_paths(G, s, t, visited=None, npath=None, pathtype=np.uint64):
