@@ -71,9 +71,12 @@ def rp_model(S, M, T, alpha, d_in, out):
         inter_ranks = inter_ranks + (inter_indices < m)
         # Ranks of all the vertices for creating this vertex
         all_ranks = np.concatenate((source_ranks, inter_ranks)).astype(np.float)
-        with np.errstate(divide='ignore'):
-            numerators = np.power(all_ranks, -1.0 * alpha)
-            numerators[~np.isfinite(numerators)] = 0.0
+        if alpha != 0.0:
+            with np.errstate(divide='warn'):
+                numerators = np.power(all_ranks, -1.0 * alpha)
+                numerators[~np.isfinite(numerators)] = 0.0
+        else:
+            numerators = (all_ranks > 0).astype(np.float)
         # Probability of connecting to every older vertex
         probabilities = numerators / np.sum(numerators)
         # Pick unique source vertices and add incoming edges from them
@@ -87,7 +90,12 @@ def rp_model(S, M, T, alpha, d_in, out):
     # M + (S-1) to the sources
     np.random.shuffle(source_ranks)
     all_ranks = np.concatenate((source_ranks, inter_ranks)).astype(np.float)
-    numerators = np.power(all_ranks, -1.0 * alpha)
+    if alpha != 0.0:
+            with np.errstate(divide='warn'):
+                numerators = np.power(all_ranks, -1.0 * alpha)
+                numerators[~np.isfinite(numerators)] = 0.0
+    else:
+        numerators = (all_ranks > 0).astype(np.float)
     # Probability of connecting to every older vertex
     probabilities = numerators / np.sum(numerators)
 
