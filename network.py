@@ -119,33 +119,6 @@ def rp_model(S, M, T, alpha, d_in, out):
             tf.write('\n'.join(str(t) for t in np.where(target)[0]))
     return G, source, target
 
-def count_simple_paths(G, s, t, visited=None, npath=None, pathtype=np.uint64):
-    """
-    @brief  Counts the number of simple s-t paths in the network.
-            Modified the code from https://cs.stackexchange.com/q/3087
-
-    @param G         nx.DiGraph representation of the network.
-    @param s         Source vertex in the network.
-    @param t         Target vertex in the network.
-    @param npath     Number of paths from every vertex to t.
-    @param pathtype  NumPy datatype provided as a hint for storing the path counts.
-
-    @return  Number of paths from s to t in the given network.
-    """
-    if visited is None:
-        visited = np.zeros(G.number_of_nodes(), dtype=np.bool)
-    if npath is None:
-        npath = np.zeros(G.number_of_nodes(), dtype=pathtype)
-    if s == t:
-        visited[s] = True
-        npath[s] = 1
-    else:
-        # assume sum returns 0 if s has no children
-        if not visited[s]:
-            visited[s] = True
-            npath[s] = sum(count_simple_paths(G, u, t, visited, npath) for u in G.successors_iter(s))
-    return npath[s]
-
 def flatten(G, source, target):
     """
     @brief  Flattens the given dependency network.
