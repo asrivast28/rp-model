@@ -4,31 +4,23 @@ import numpy as np
 import utils
 
 
-def path_centrality(G, source, target, pathtype=np.uint64):
+def path_centrality(G, P_s, P_t, centrality):
     """
     @brief  Computes path centrality values for all the vertices in a network.
 
     @param G           nx.DiGraph or nx.MultiDiGraph representation of the network.
-    @param source      NumPy array of type bool with 1 for every source vertex.
-    @param target      NumPy array of type bool with 1 for every target vertex.
-    @param pathtype    NumPy datatype provided as a hint for storing centrality values.
-
-    @return  A NumPy array containg centrality value for every vertex in the given network.
+    @param P_s         NumPy array with 1 for every source vertex and 0 for other vertices.
+    @param P_s         NumPy array with 1 for every target vertex and 0 for other vertices.
+    @param centrality  NumPy array containg centrality value for every vertex in the given network.
     """
-
     # Compute the number of paths from sources to every vertex: complexity
-    # Initialize complexity for the source vertices to 1
-    P_s = source.astype(pathtype)
-    utils.count_simple_paths(G, utils.reverse_iter, utils.forward_iter, set(np.where(source)[0]), P_s)
+    utils.count_simple_paths(G, utils.reverse_iter, utils.forward_iter, set(np.where(P_s)[0]), P_s)
 
     # Compute the number of paths from every vertex to targets: generality
-    # Initialize generality for the target vertices to 1
-    P_t = target.astype(pathtype)
-    utils.count_simple_paths(G, utils.forward_iter, utils.reverse_iter, set(np.where(target)[0]), P_t)
+    utils.count_simple_paths(G, utils.forward_iter, utils.reverse_iter, set(np.where(P_t)[0]), P_t)
 
     # Multiply complexity and generality to get the path centrality
-    centrality = P_s * P_t
-    return centrality
+    np.multiply(P_s, P_t, out=centrality)
 
 def remove_vertex(G, vertex, source, target, in_degree, out_degree):
     """
@@ -50,15 +42,15 @@ def remove_vertex(G, vertex, source, target, in_degree, out_degree):
     G.remove_node(vertex)
     G.add_node(vertex)
 
-def core_vertices(G, source, target, tau, vertextype=np.uint32):
+def core_vertices(G, source, target, tau, datatype=np.uint64):
     """
     @brief  Greedily finds core vertices in the given network.
 
-    @param G           nx.DiGraph or nx.MultiDiGraph representation of the network.
-    @param source      NumPy array of type bool with 1 for every source vertex.
-    @param target      NumPy array of type bool with 1 for every target vertex.
-    @param tau         Fraction of S-T paths to be covered by the core vertices.
-    @param vertextype  NumPy datatype provided as a hint for storing degrees.
+    @param G         nx.DiGraph or nx.MultiDiGraph representation of the network.
+    @param source    NumPy array of type bool with 1 for every source vertex.
+    @param target    NumPy array of type bool with 1 for every target vertex.
+    @param tau       Fraction of S-T paths to be covered by the core vertices.
+    @param datatype  NumPy datatype provided as a hint for storage.
 
     @return  List containing all the core vertices.
     """
@@ -68,11 +60,16 @@ def core_vertices(G, source, target, tau, vertextype=np.uint32):
     target = np.copy(target)
 
     # Compute initial in and out degree for the network
-    in_degree = np.array(list(G.in_degree(n) for n in xrange(G.number_of_nodes())), dtype=vertextype)
-    out_degree = np.array(list(G.out_degree(n) for n in xrange(G.number_of_nodes())), dtype=vertextype)
+    in_degree = np.array(list(G.in_degree(n) for n in xrange(G.number_of_nodes())), dtype=datatype)
+    out_degree = np.array(list(G.out_degree(n) for n in xrange(G.number_of_nodes())), dtype=datatype)
 
     # Compute initial path centralities
-    centrality = path_centrality(G, source, target)
+    # Initialize complexity for the source vertices to 1
+    P_s = source.astype(datatype)
+    # Initialize generality for the target vertices to 1
+    P_t = target.astype(datatype)
+    centrality = np.empty(source.size, datatype)
+    path_centrality(G, P_s, P_t, centrality)
 
     # Compute the initial number of S-T paths
     # Same as the number of paths exiting from the sources
@@ -95,13 +92,15 @@ def core_vertices(G, source, target, tau, vertextype=np.uint32):
                 _G = G.copy()
                 _source = np.copy(source)
                 _target = np.copy(target)
-                _in_degree = np.copy(in_degree)
-                _out_degree = np.copy(out_degree)
-                remove_vertex(_G, vertex, _source, _target, _in_degree, _out_degree)
-                _centrality = path_centrality(_G, _source, _target)
+                remove_vertex(_G, vertex, _source, _target, np.copy(in_degree), np.copy(out_degree))
+                P_s[source] = 1
+                P_s[~source] = 0
+                P_t[target] = 1
+                P_t[~target] = 0
+                path_centrality(_G, P_s, P_t, centrality)
                 neighbors = set([vertex])
                 for other in candidate_vertices:
-                    if other != vertex and _centrality[other] == 0:
+                    if other != vertex and centrality[other] == 0:
                         neighbors.add(other)
                 PES.append(neighbors)
             updates = True
@@ -119,7 +118,11 @@ def core_vertices(G, source, target, tau, vertextype=np.uint32):
         C.append(candidate_vertex if len(candidate_vertex) > 1 else candidate_vertex.pop())
 
         # Recompute path centralities
-        centrality = path_centrality(G, source, target)
+        P_s[source] = 1
+        P_s[~source] = 0
+        P_t[target] = 1
+        P_t[~target] = 0
+        path_centrality(G, P_s, P_t, centrality)
 
         P_R = P - np.sum(source * centrality)
     return C

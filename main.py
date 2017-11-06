@@ -54,12 +54,12 @@ def main():
         G, source, target = network.rp_model(args.sources, intermediates, args.targets, args.alpha, args.d_in, args.out)
 
     # Get the core vertices for the network
-    C = analysis.core_vertices(G, source, target, args.tau)
+    C = analysis.core_vertices(G, source, target, args.tau, datatype=np.uint32)
 
     # Get the flattened network corresponding to the original network
     G_f = network.flatten(G, source, target)
     # Get the core vertices for the flattened network
-    C_f = analysis.core_vertices(G_f, source, target, args.tau)
+    C_f = analysis.core_vertices(G_f, source, target, args.tau, datatype=np.uint32)
 
     # H-score of the original network
     H = 1 - (float(len(C)) / len(C_f))
