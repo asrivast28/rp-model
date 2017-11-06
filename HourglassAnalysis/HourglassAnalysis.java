@@ -114,7 +114,6 @@ public class HourglassAnalysis {
 					++nPath;
 				}
 				if (depends.containsKey(node)) {
-          System.out.println(node);
 					for (String s : depends.get(node)) {
 						sourcePathsTraverse(s);
 						double weight = 1;
@@ -163,12 +162,6 @@ public class HourglassAnalysis {
 		}
 
 		private void getPathStats() {
-			 for (String key: depends.keySet()){
-            String value = depends.get(key).toString();
-            System.out.println(key + " " + value);  
-			} 
-
-
 			pathStatisticsHelper();
 			nTotalPath = 0;
 			for (String s : nodes) {
