@@ -1,29 +1,8 @@
 from itertools import combinations
 import numpy as np
 
+import utils
 
-def _compute_num_paths(G, this_level, predecessors_iter, successors_iter, P_v):
-    # Compute number of paths for all the vertices
-    next_level = set()
-    for u in this_level:
-        P_v[u] = max(P_v[u], sum(P_v[p] for p in predecessors_iter(G, u)))
-        next_level.update(set(s for s in successors_iter(G, u)))
-    if next_level:
-        _compute_num_paths(G, np.array(list(next_level)), predecessors_iter, successors_iter, P_v)
-
-def forward_iter(G, n):
-    """
-    @brief  Forward neighbor iterator for a node in nx.DiGraph or nx.MultiDiGraph
-    """
-    for u, v in G.out_edges_iter(n):
-        yield v
-
-def reverse_iter(G, n):
-    """
-    @brief  Reverse neighbor iterator for a node in nx.DiGraph or nx.MultiDiGraph
-    """
-    for u, v in G.in_edges_iter(n):
-        yield u
 
 def path_centrality(G, source, target, pathtype=np.uint64):
     """
@@ -40,12 +19,12 @@ def path_centrality(G, source, target, pathtype=np.uint64):
     # Compute the number of paths from sources to every vertex: complexity
     # Initialize complexity for the source vertices to 1
     P_s = source.astype(pathtype)
-    _compute_num_paths(G, np.where(source)[0], reverse_iter, forward_iter, P_s)
+    utils.count_simple_paths(G, utils.reverse_iter, utils.forward_iter, set(np.where(source)[0]), P_s)
 
     # Compute the number of paths from every vertex to targets: generality
     # Initialize generality for the target vertices to 1
     P_t = target.astype(pathtype)
-    _compute_num_paths(G, np.where(target)[0], forward_iter, reverse_iter, P_t)
+    utils.count_simple_paths(G, utils.forward_iter, utils.reverse_iter, set(np.where(target)[0]), P_t)
 
     # Multiply complexity and generality to get the path centrality
     centrality = P_s * P_t

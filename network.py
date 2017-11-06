@@ -1,6 +1,8 @@
 import networkx as nx
 import numpy as np
 
+import utils
+
 
 def datatype(value_max):
     """
@@ -159,12 +161,14 @@ def flatten(G, source, target):
     # Add the same nodes as the original network
     G_f.add_nodes_from(xrange(G.number_of_nodes()))
 
+
     # Create the flat dependency network
+    P_s = np.empty(G.number_of_nodes(), dtype=np.uint64)
+    targets = np.where(target)[0]
     for s in np.where(source)[0]:
-        for t in np.where(target)[0]:
-            # Compute the number of simple s-t paths
-            st_paths = count_simple_paths(G, s, t)
-            # Create multiple parallel edges between s and t
-            # one for every s-t path
-            G_f.add_edges_from((s, t) for p in xrange(st_paths))
+        P_s.fill(0)
+        P_s[s] = 1
+        utils.count_simple_paths(G, utils.reverse_iter, utils.forward_iter, set([s]), P_s)
+        for t in targets:
+            G_f.add_edges_from((s, t) for p in xrange(P_s[t]))
     return G_f
