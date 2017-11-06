@@ -4,16 +4,6 @@ import numpy as np
 import utils
 
 
-def datatype(value_max):
-    """
-    @brief  Returns the unsigned NumPy datatype suitable for storing value_max.
-    """
-    from bisect import bisect
-    all_dtypes = (np.uint8, np.uint16, np.uint32, np.uint64)
-    dtype_max = [np.iinfo(dtype).max for dtype in all_dtypes]
-    dtype_max.insert(0, 0)
-    return all_dtypes[bisect(dtype_max, value_max) - 1]
-
 def read(filename):
     """
     @brief  Reads a network from the file in edge-list format.
@@ -29,7 +19,7 @@ def read(filename):
         for edge in f.xreadlines():
             if not edge.startswith('%'):
                 G.add_edge(*tuple(int(u) for u in edge.split()))
-    vertex = np.arange(G.number_of_nodes(), dtype=datatype(G.number_of_nodes()))
+    vertex = np.arange(G.number_of_nodes(), dtype=utils.datatype(G.number_of_nodes()))
     source = np.vectorize(lambda v : G.in_degree(v) == 0, otypes=[np.bool])(vertex)
     target = np.vectorize(lambda v : G.out_degree(v) == 0, otypes=[np.bool])(vertex)
     return G, source, target
@@ -51,7 +41,7 @@ def rp_model(S, M, T, alpha, d_in, out):
     G = nx.DiGraph()
     # Add all the vertices to the network
     V = S + M + T
-    vertextype = datatype(V)
+    vertextype = utils.datatype(V)
     vertex = np.arange(V, dtype=vertextype)
     G.add_nodes_from(vertex)
 

@@ -1,3 +1,14 @@
+def datatype(value_max):
+    """
+    @brief  Returns the unsigned NumPy datatype suitable for storing value_max.
+    """
+    import numpy as np
+    from bisect import bisect
+    all_dtypes = (np.uint8, np.uint16, np.uint32, np.uint64)
+    dtype_max = [np.iinfo(dtype).max for dtype in all_dtypes]
+    dtype_max.insert(0, 0)
+    return all_dtypes[bisect(dtype_max, value_max) - 1]
+
 def forward_iter(G, n):
     """
     @brief  Forward neighbor iterator for a node in nx.DiGraph or nx.MultiDiGraph
