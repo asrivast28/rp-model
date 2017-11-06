@@ -4,8 +4,8 @@ import numpy as np
 def _compute_num_paths(G, vertex, neighbor_iter, degree, pathtype):
     # Initialize complexity for the initial vertices to 1
     P_v = vertex.astype(pathtype)
-    # Compute number of paths for all the vertices 
-    this_level = np.where(P_v)[0]
+    # Compute number of paths for all the vertices
+    this_level = np.where(vertex)[0]
     while this_level.size > 0:
         next_level = set()
         for u in this_level:
