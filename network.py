@@ -72,7 +72,7 @@ def rp_model(S, M, T, alpha, d_in, out):
         # Ranks of all the vertices for creating this vertex
         all_ranks = np.concatenate((source_ranks, inter_ranks)).astype(np.float)
         if alpha != 0.0:
-            with np.errstate(divide='warn'):
+            with np.errstate(divide='ignore'):
                 numerators = np.power(all_ranks, -1.0 * alpha)
                 numerators[~np.isfinite(numerators)] = 0.0
         else:
@@ -91,7 +91,7 @@ def rp_model(S, M, T, alpha, d_in, out):
     np.random.shuffle(source_ranks)
     all_ranks = np.concatenate((source_ranks, inter_ranks)).astype(np.float)
     if alpha != 0.0:
-            with np.errstate(divide='warn'):
+            with np.errstate(divide='ignore'):
                 numerators = np.power(all_ranks, -1.0 * alpha)
                 numerators[~np.isfinite(numerators)] = 0.0
     else:
