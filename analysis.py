@@ -133,4 +133,4 @@ def core_vertices(G, source, target, tau, datatype=np.uint64):
         C.append(candidate_vertex if len(candidate_vertex) > 1 else candidate_vertex.pop())
 
         P_R = P - np.sum(source * centrality)
-    return C
+    return P, C
