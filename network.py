@@ -127,12 +127,12 @@ def flatten(G, source, target, datatype=np.uint64):
 
 
     # Create the flat dependency network
-    P_s = np.empty(G.number_of_nodes(), dtype=np.uint64)
+    P_s = np.empty(G.number_of_nodes(), dtype=datatype)
     targets = np.where(target)[0]
     for s in np.where(source)[0]:
         P_s.fill(0)
         P_s[s] = 1
-        utils.count_simple_paths(G, utils.reverse_iter, utils.forward_iter, set([s]), P_s)
+        utils.count_simple_paths(G, utils.reverse_iter, utils.forward_iter, set(n for n in utils.forward_iter(G, s)), P_s)
         for t in targets:
             G_f.add_edges_from((s, t) for p in xrange(P_s[t]))
     return G_f

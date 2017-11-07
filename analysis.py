@@ -14,10 +14,16 @@ def path_centrality(G, P_s, P_t, centrality):
     @param centrality  NumPy array containg centrality value for every vertex in the given network.
     """
     # Compute the number of paths from sources to every vertex: complexity
-    utils.count_simple_paths(G, utils.reverse_iter, utils.forward_iter, set(np.where(P_s)[0]), P_s)
+    first_level = set()
+    for s in np.where(P_s)[0]:
+        first_level.update(n for n in utils.forward_iter(G, s))
+    utils.count_simple_paths(G, utils.reverse_iter, utils.forward_iter, first_level, P_s)
 
     # Compute the number of paths from every vertex to targets: generality
-    utils.count_simple_paths(G, utils.forward_iter, utils.reverse_iter, set(np.where(P_t)[0]), P_t)
+    first_level = set()
+    for t in np.where(P_t)[0]:
+        first_level.update(n for n in utils.reverse_iter(G, t))
+    utils.count_simple_paths(G, utils.forward_iter, utils.reverse_iter, first_level, P_t)
 
     # Multiply complexity and generality to get the path centrality
     np.multiply(P_s, P_t, out=centrality)
@@ -30,6 +36,8 @@ def remove_vertex(G, vertex, source, target, in_degree, out_degree):
     @param vertex      Vertex to be removed from the network.
     @param in_degree   NumPy array containing in-degree for every vertex.
     @param out_degree  NumPy array containing out-degree for every vertex.
+
+    @return  List containing all the deleted edges.
     """
     for p, v in G.in_edges_iter(vertex):
         out_degree[p] -= 1
@@ -39,8 +47,11 @@ def remove_vertex(G, vertex, source, target, in_degree, out_degree):
     out_degree[vertex] = 0
     source[source & (out_degree == 0)] = False
     target[target & (in_degree == 0)] = False
+    vertex_edges = G.out_edges(vertex)
+    vertex_edges.extend(G.in_edges(vertex))
     G.remove_node(vertex)
     G.add_node(vertex)
+    return vertex_edges
 
 def core_vertices(G, source, target, tau, datatype=np.uint64):
     """
@@ -89,20 +100,20 @@ def core_vertices(G, source, target, tau, datatype=np.uint64):
             PES = []
             # Check if two or more vertices are on the same path
             for vertex in candidate_vertices:
-                _G = G.copy()
                 _source = np.copy(source)
                 _target = np.copy(target)
-                remove_vertex(_G, vertex, _source, _target, np.copy(in_degree), np.copy(out_degree))
+                vertex_edges = remove_vertex(G, vertex, _source, _target, np.copy(in_degree), np.copy(out_degree))
                 P_s[source] = 1
                 P_s[~source] = 0
                 P_t[target] = 1
                 P_t[~target] = 0
-                path_centrality(_G, P_s, P_t, centrality)
+                path_centrality(G, P_s, P_t, centrality)
                 neighbors = set([vertex])
                 for other in candidate_vertices:
                     if other != vertex and centrality[other] == 0:
                         neighbors.add(other)
                 PES.append(neighbors)
+                G.add_edges_from(vertex_edges)
             updates = True
             while updates:
                 for i, j in combinations(range(len(PES)), 2):

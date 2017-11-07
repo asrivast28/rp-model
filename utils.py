@@ -35,7 +35,7 @@ def count_simple_paths(G, predecessors_iter, successors_iter, sources, paths):
     """
     next_level = set()
     for u in sources:
-        paths[u] = max(paths[u], sum(paths[p] for p in predecessors_iter(G, u)))
+        paths[u] = sum(paths[p] for p in predecessors_iter(G, u))
         next_level.update(set(s for s in successors_iter(G, u)))
     if next_level:
         count_simple_paths(G, predecessors_iter, successors_iter, next_level, paths)
