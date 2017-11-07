@@ -9,7 +9,7 @@ public class HourglassAnalysis {
 		private HashSet<String> nodes;
 		private HashSet<String> targets;
 		private HashSet<String> sources;
-		private HashMap<String, HashSet<String>> serves; 
+		private HashMap<String, HashSet<String>> serves;
 		private HashMap<String, HashSet<String>> depends;
 		
 		public HashMap<String, Double> numOfTargetPath;
@@ -24,7 +24,7 @@ public class HourglassAnalysis {
 		public static boolean processingFlat = false;
 		public HashMap<String, Double> edgeWeights;
 		
-		public DependencyDAG() { 
+		public DependencyDAG() {
 			nodes = new HashSet();
 			serves = new HashMap();
 			depends = new HashMap();
