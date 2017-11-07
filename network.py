@@ -13,7 +13,7 @@ def read(filename):
     @return  A nx.DiGraph instance of the read network.
     """
     # initialize a graph
-    G = nx.DiGraph()
+    G = nx.DiGraph(weights=False)
     # with open('centrality_test,txt', 'rb') as f:
     with open(filename, 'rb') as f:
         for edge in f.xreadlines():
@@ -38,7 +38,7 @@ def rp_model(S, M, T, alpha, d_in, out):
     @return  A nx.DiGraph instance of the generated network.
     """
     # Create an empty directed network
-    G = nx.DiGraph()
+    G = nx.DiGraph(weights=False)
     # Add all the vertices to the network
     V = S + M + T
     vertextype = utils.datatype(V)
@@ -109,7 +109,7 @@ def rp_model(S, M, T, alpha, d_in, out):
             tf.write('\n'.join(str(t) for t in np.where(target)[0]))
     return G, source, target
 
-def flatten(G, source, target, datatype=np.uint64):
+def flatten(G, source, target, weights=True, datatype=np.uint64):
     """
     @brief  Flattens the given dependency network.
 
@@ -118,13 +118,16 @@ def flatten(G, source, target, datatype=np.uint64):
     @param target    NumPy array of type bool with 1 for every target vertex.
     @param datatype  NumPy datatype provided as a hint for storage.
 
-    @return  nx.MultiDiGraph representation of the flattened dependency network.
+    @return  Weighted nx.DiGraph or nx.MultiDiGraph representation of the flattened dependency network.
     """
-    # Create a directed flat network which allows parallel edges
-    G_f = nx.MultiDiGraph()
+    if weights:
+        # Create a weighted directed network
+        G_f = nx.DiGraph(weights=True)
+    else:
+        # Create a directed flat network which allows parallel edges
+        G_f = nx.MultiDiGraph(weights=False)
     # Add the same nodes as the original network
     G_f.add_nodes_from(xrange(G.number_of_nodes()))
-
 
     # Create the flat dependency network
     P_s = np.empty(G.number_of_nodes(), dtype=datatype)
@@ -133,6 +136,9 @@ def flatten(G, source, target, datatype=np.uint64):
         P_s.fill(0)
         P_s[s] = 1
         utils.count_simple_paths(G, utils.reverse_iter, utils.forward_iter, set(n for n in utils.forward_iter(G, s)), P_s)
-        for t in targets:
-            G_f.add_edges_from((s, t) for p in xrange(P_s[t]))
+        if weights:
+            G_f.add_weighted_edges_from((s, t, P_s[t]) for t in targets)
+        else:
+            for t in targets:
+                G_f.add_edges_from((s, t) for p in xrange(int(P_s[t])))
     return G_f

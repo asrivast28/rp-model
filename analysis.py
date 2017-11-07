@@ -33,7 +33,7 @@ def remove_vertex(G, vertex, source, target, in_degree, out_degree):
     """
     @brief  Removes all the edges to and from the given vertex in the given network.
 
-    @param G           nx.DiGraph representation of the network.
+    @param G           nx.DiGraph or nx.MultiDiGraph representation of the network.
     @param vertex      Vertex to be removed from the network.
     @param in_degree   NumPy array containing in-degree for every vertex.
     @param out_degree  NumPy array containing out-degree for every vertex.
@@ -48,8 +48,12 @@ def remove_vertex(G, vertex, source, target, in_degree, out_degree):
     out_degree[vertex] = 0
     source[source & (out_degree == 0)] = False
     target[target & (in_degree == 0)] = False
-    vertex_edges = G.out_edges(vertex)
-    vertex_edges.extend(G.in_edges(vertex))
+    if G.graph['weights']:
+        vertex_edges = [(u, v, d['weight']) for u, v, d in G.out_edges(vertex, data=True)]
+        vertex_edges.extend((u, v, d['weight']) for u, v, d in G.in_edges(vertex, data=True))
+    else:
+        vertex_edges = [e for e in G.out_edges(vertex)]
+        vertex_edges.extend(e for e in G.in_edges(vertex))
     G.remove_node(vertex)
     G.add_node(vertex)
     return vertex_edges
@@ -114,7 +118,10 @@ def core_vertices(G, source, target, tau, datatype=np.uint64):
                     if other != vertex and centrality[other] == 0:
                         neighbors.add(other)
                 PES.append(neighbors)
-                G.add_edges_from(vertex_edges)
+                if G.graph['weights']:
+                    G.add_weighted_edges_from(vertex_edges)
+                else:
+                    G.add_edges_from(vertex_edges)
             updates = True
             while updates:
                 for i, j in combinations(range(len(PES)), 2):
@@ -133,5 +140,8 @@ def core_vertices(G, source, target, tau, datatype=np.uint64):
         C.append(candidate_vertex if len(candidate_vertex) > 1 else candidate_vertex.pop())
 
         P_R = P - np.sum(source * centrality)
-    G.add_edges_from(deleted_edges)
+    if G.graph['weights']:
+        G.add_weighted_edges_from(deleted_edges)
+    else:
+        G.add_edges_from(deleted_edges)
     return P, C
