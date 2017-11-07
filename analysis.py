@@ -67,7 +67,6 @@ def core_vertices(G, source, target, tau, datatype=np.uint64):
     @return  List containing all the core vertices.
     """
     # Copy objects that are going to be modified
-    G = G.copy()
     source = np.copy(source)
     target = np.copy(target)
 
@@ -87,6 +86,7 @@ def core_vertices(G, source, target, tau, datatype=np.uint64):
     # Same as the number of paths exiting from the sources
     P = np.sum(source * centrality)
 
+    deleted_edges = []
     C = []
     P_R = 0
     while float(P_R) < (tau * P):
@@ -129,8 +129,9 @@ def core_vertices(G, source, target, tau, datatype=np.uint64):
             P_s[vertex] = 0
             P_t[vertex] = 0
             update_path_centrality(G, P_s, P_t, centrality, vertex)
-            remove_vertex(G, vertex, source, target, in_degree, out_degree)
+            deleted_edges.extend(remove_vertex(G, vertex, source, target, in_degree, out_degree))
         C.append(candidate_vertex if len(candidate_vertex) > 1 else candidate_vertex.pop())
 
         P_R = P - np.sum(source * centrality)
+    G.add_edges_from(deleted_edges)
     return P, C
