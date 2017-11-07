@@ -12,17 +12,17 @@ public class HourglassAnalysis {
 		private HashMap<String, HashSet<String>> serves;
 		private HashMap<String, HashSet<String>> depends;
 		
-		public HashMap<String, Double> numOfTargetPath;
-		public HashMap<String, Double> numOfSourcePath;
-		public HashMap<String, Double> nodePathThrough;
-		public double nTotalPath;
+		private HashMap<String, Double> numOfTargetPath;
+		private HashMap<String, Double> numOfSourcePath;
+		private HashMap<String, Double> nodePathThrough;
+		private double nTotalPath;
 		
-		public double pathCoverageTau = 0.9;
-		public HashSet<String> coreNodes;
-		public HashSet<String> skipNodes;
+		private double pathCoverageTau = 0.9;
+		private HashSet<String> coreNodes;
+		private HashSet<String> skipNodes;
 		
 		public static boolean processingFlat = false;
-		public HashMap<String, Double> edgeWeights;
+		private HashMap<String, Double> edgeWeights;
 		
 		public DependencyDAG() {
 			nodes = new HashSet();
@@ -42,10 +42,50 @@ public class HourglassAnalysis {
 			loadNetwork(dependencyGraphFilePath);
 			loadSources(sourceFilePath);
 			loadTargets(targetFilePath);
+			addSuperSourceTarget();
 			getPathStats();
 			getCore();
 			if (!processingFlat) {
 				getFlatNetwork();
+			}
+		}
+		
+		private void addEdge(String server, String dependent) {
+			nodes.add(dependent);
+			nodes.add(server);
+			if (serves.containsKey(server)) {
+				serves.get(server).add(dependent);
+			} else {
+				HashSet<String> hs = new HashSet();
+				hs.add(dependent);
+				serves.put(server, hs);
+			}
+			if (depends.containsKey(dependent)) {
+				depends.get(dependent).add(server);
+			} else {
+				HashSet<String> hs = new HashSet();
+				hs.add(server);
+				depends.put(dependent, hs);
+			}
+		}
+		
+		private void removeEdge(String server, String dependent) {
+			serves.get(server).remove(dependent);
+			depends.get(dependent).remove(server);
+		}
+		
+		private void addSuperSourceTarget() {
+			for (String s: sources) {
+				addEdge("superSource", s);
+				if (processingFlat) {
+					edgeWeights.put("superSource#" + s, 1.0);
+				}
+			}
+			for (String t: targets) {
+				addEdge(t, "superTarget");
+				if (processingFlat) {
+					edgeWeights.put(t + "#superTarget", 1.0);
+				}
 			}
 		}
 		
@@ -76,32 +116,9 @@ public class HourglassAnalysis {
 					double weight = Double.parseDouble(tokens[2]);
 					edgeWeights.put(server + "#" + dependent, weight);
 				}
-				nodes.add(dependent);
-				nodes.add(server);
-				if (serves.containsKey(server)) {
-					serves.get(server).add(dependent);
-				} else {
-					HashSet<String> hs = new HashSet();
-					hs.add(dependent);
-					serves.put(server, hs);
-				}
-				if (depends.containsKey(dependent)) {
-					depends.get(dependent).add(server);
-				} else {
-					HashSet<String> hs = new HashSet();
-					hs.add(server);
-					depends.put(dependent, hs);
-				}
+				addEdge(server, dependent);
 			}
 			scanner.close();
-		}
-		
-		private boolean isSource(String node) {		
-			return sources.contains(node);
-		}
-		
-		private boolean isTarget(String node) {
-			return targets.contains(node);
 		}
 		
 		private void sourcePathsTraverse(String node) {
@@ -110,7 +127,7 @@ public class HourglassAnalysis {
 			}
 			double nPath = 0;
 			if (!skipNodes.contains(node)) {
-				if (isSource(node)) {
+				if (node.equals("superSource")) {
 					++nPath;
 				}
 				if (depends.containsKey(node)) {
@@ -133,7 +150,7 @@ public class HourglassAnalysis {
 			}
 			double nPath = 0;
 			if (!skipNodes.contains(node)) {
-				if (isTarget(node)) {
+				if (node.equals("superTarget")) {
 					++nPath;
 				}
 				if (serves.containsKey(node)) {
@@ -166,20 +183,27 @@ public class HourglassAnalysis {
 			nTotalPath = 0;
 			for (String s : nodes) {
 				double nPath = 0;
-				if (numOfTargetPath.containsKey(s) && numOfSourcePath.containsKey(s)) {
-					nPath = numOfTargetPath.get(s) * numOfSourcePath.get(s);
+				if (numOfSourcePath.containsKey(s) && numOfTargetPath.containsKey(s)) {
+					nPath = numOfSourcePath.get(s) * numOfTargetPath.get(s);
 				}
 				nodePathThrough.put(s, nPath);
-				if (isSource(s)) {
-					nTotalPath += nPath;
-				}
 			}
+			nTotalPath = nodePathThrough.get("superSource");
+		}
+		
+		private boolean isSuperNode(String n) {
+			if (n.equals("superSource") || n.equals("superTarget")) {
+				return true;
+			}
+			return false;
 		}
 			
 		public void printNetworkProperties() throws Exception {
-//			PrintWriter pw = new PrintWriter(new File("path_centrality.txt"));
+//			PrintWriter pw = new PrintWriter(new File("hourglassAnalysis.txt"));
 			for (String s: nodes) {
+				if (isSuperNode(s)) continue;
 				System.out.println(s + "\tComplexity: " + numOfSourcePath.get(s) + "\tGenerality: " + numOfTargetPath.get(s) + "\tPath_centrality: " + nodePathThrough.get(s));
+//				System.out.println(s + "\t" + nodePathThrough.get(s));
 			}
 			System.out.println("Total_paths: " + nTotalPath);
 			System.out.println("Core_size: " + coreNodes.size() + "\t" + "Core_set: " + coreNodes);
@@ -188,8 +212,9 @@ public class HourglassAnalysis {
 		
 		private void getCore() {
 			greedyTraverse(0, nTotalPath);
+			// resetting everything
 			skipNodes.clear();
-			getPathStats(); // resetting everything
+			getPathStats();
 		}
 		
 		private void greedyTraverse(double cumulativePathCovered, double nPath) {			
@@ -200,42 +225,42 @@ public class HourglassAnalysis {
 			double maxPathCovered = -1;
 			String maxPathCoveredNode = "";
 			for (String s : nodes) {
-//				find the node with largest through path
+				if (isSuperNode(s)) continue;
 				double numPathCovered = nodePathThrough.get(s);				
 				if (numPathCovered > maxPathCovered) {
 					maxPathCovered = numPathCovered;
 					maxPathCoveredNode = s;
 				}
-			}	
+			}				
 			skipNodes.add(maxPathCoveredNode);
-//			recompute through paths for all nodes
 			getPathStats();
+			if (!processingFlat) {
+				//System.out.println(maxPathCoveredNode + "\t" + ((cumulativePathCovered + maxPathCovered) / nPath));
+			}
 			greedyTraverse(cumulativePathCovered + maxPathCovered, nPath);
 		}
 		
 		private void getFlatNetwork() throws Exception {
 			PrintWriter pw = new PrintWriter(new File("flat.txt"));			
-			skipNodes.clear();
-			for (String s: nodes) {
-				if(isSource(s)) {
-					skipNodes.add(s);
-				}
+			for (String s: sources) {
+				removeEdge("superSource", s);
 			}
-			for (String s: nodes) {
-				if (isSource(s)) {
-					skipNodes.remove(s);
-					getPathStats();
-					for (String r: nodes) {
-						if (isTarget(r) && nodePathThrough.get(r) > 0) {
-							pw.println(s + "\t" + r + "\t" + nodePathThrough.get(r));							
-						}
+			for (String s: sources) {
+				addEdge("superSource", s);
+				getPathStats();
+				for (String r: targets) {
+					if (nodePathThrough.get(r) > 0) {
+						pw.println(s + "\t" + r + "\t" + numOfSourcePath.get(r));							
 					}
-					skipNodes.add(s);
 				}
+				removeEdge("superSource", s);
 			}
 			pw.close();
-			skipNodes.clear();
-			getPathStats(); // resetting everything
+			// resetting everything
+			for (String s: sources) {
+				addEdge("superSource", s);
+			}
+			getPathStats();
 		}
 	}
 	
