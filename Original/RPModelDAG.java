@@ -168,7 +168,7 @@ public class RPModelDAG {
 		DecimalFormat df = new DecimalFormat();
 		df.setMaximumFractionDigits(2);
 		
-		PrintWriter pw = new PrintWriter(new File("data//RPModelDAG_links.txt"));
+		PrintWriter pw = new PrintWriter(new File("paper_links.txt"));
 		uniqueEdge = new HashSet();
 		generateSimpleModelDAG(pw);
 	}

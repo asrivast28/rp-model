@@ -265,6 +265,8 @@ public class HourglassAnalysis {
 	}
 	
 	public static void main(String[] args) throws Exception {
+		RPModelDAG rpModelDAG = new RPModelDAG();
+		rpModelDAG.generateSimpleModel(Double.parseDouble(args[0]), Integer.parseInt(args[1]), Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));
 		String dependencyDAGFile = "paper_links.txt";
 		String sourceFile = "paper_sources.txt";
 		String targetFile = "paper_targets.txt";
