@@ -5,9 +5,9 @@ import network
 import analysis
 
 
-def parse_args():
+def parse_args(argv):
     """
-    @brief  Parses command line arguments.
+    @brief  Parses the provided list of arguments.
 
     @return  Structure containing parsed arguments.
     """
@@ -22,7 +22,7 @@ def parse_args():
     parser.add_argument('--tau', '-u', metavar = 'U', type = float, default = 0.9, help = 'path coverage threshold')
     parser.add_argument('--seed', '-n', metavar = 'N', type = int, default = 0, help = 'seed for the PRNG')
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     # In-degree distribution for the network
     if args.degreedist == 1:
         args.d_in = lambda : 1 + np.random.poisson(1.0)
@@ -35,12 +35,12 @@ def parse_args():
 
     return args
 
-def main():
+def properties(argv):
     """
-    @brief  Main function.
+    @brief  Analyzes hourglass properties of the network defined by the arguments.
     """
     # Parse the command line arguments.
-    args = parse_args()
+    args = parse_args(argv)
     # Seed the PRNG
     np.random.seed(args.seed)
 
@@ -54,17 +54,22 @@ def main():
 
     # Get the core vertices for the network
     P, C = analysis.core_vertices(G, source, target, args.tau, datatype=np.float64)
-    print 'Original_network\nTotal_paths: %d\nCore_size: %d'%(P, len(C))
 
     # Get the flattened network corresponding to the original network
     G_f = network.flatten(G, source, target, weights=(P > 50000), datatype=np.float64)
     # Get the core vertices for the flattened network
     P_f, C_f = analysis.core_vertices(G_f, source, target, args.tau, datatype=np.float64)
-    print 'Flat_network\nTotal_paths: %d\nCore_size: %d'%(P_f, len(C_f))
 
     # H-score of the original network
     H = 1 - (float(len(C)) / len(C_f))
-    print 'H_score: %f'%H
+    return (P, len(C), P_f, len(C_f), H)
 
 if __name__ == '__main__':
-    main()
+    import sys
+    if len(sys.argv) == 1:
+        properties(['--help'])
+    else:
+        P, C, P_f, C_f, H = properties(sys.argv[1:])
+        print 'Original_network\nTotal_paths: %d\nCore_size: %d'%(P, C)
+        print 'Flat_network\nTotal_paths: %d\nCore_size: %d'%(P_f, C_f)
+        print 'H_score: %f'%H
