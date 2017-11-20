@@ -4,7 +4,7 @@ It can also be used for computing various hourglass network metrics for the gene
 The usage of this code can be printed by executing the following command.
 
 ```
-python main.py --help
+python hourglass.py --help
 ```
 
 ## Requirements
