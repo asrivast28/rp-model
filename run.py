@@ -19,8 +19,8 @@ def parse_output(out):
     return P, C, P_f, C_f, H
 
 NUM_EXPERIMENTS = 20
-#          S=M=T,     S=M=T,     S=M=T,     S=2M=2T,    T=2S=2M,   M=2S=2T,  S=T=2M
-ratios = [(1, 1, 1), (1, 1, 1), (1, 1, 1), (2, 1, 1), (1, 1, 2), (1, 2, 1), (2, 2, 1)]
+#          S=M=T,     S=M=T,     S=M=T,     S=2M=2T,    2S=2M=T,   2S=M=2T,  S=2M=T
+ratios = [(1, 1, 1), (1, 1, 1), (1, 1, 1), (2, 1, 1), (1, 1, 2), (1, 2, 1), (2, 1, 2)]
 degrees = [1, 2, 3, 1, 1, 1, 1]
 if len(sys.argv) > 1:
     index = int(sys.argv[1])
