@@ -9,7 +9,7 @@ def datatype(value_max):
     dtype_max.insert(0, 0)
     return all_dtypes[bisect(dtype_max, value_max) - 1]
 
-def forward_iter(G, n, weight=False):
+def forward_iter(G, n, weight=True):
     """
     @brief  Forward neighbor iterator for a node in nx.DiGraph or nx.MultiDiGraph
     """
@@ -20,7 +20,7 @@ def forward_iter(G, n, weight=False):
         for u, v in G.out_edges_iter(n, data=False):
             yield v
 
-def reverse_iter(G, n, weight=False):
+def reverse_iter(G, n, weight=True):
     """
     @brief  Reverse neighbor iterator for a node in nx.DiGraph or nx.MultiDiGraph
     """
@@ -44,9 +44,9 @@ def count_simple_paths(G, predecessors_iter, successors_iter, sources, paths):
     next_level = set()
     for u in sources:
         if G.graph['weights']:
-            paths[u] = sum((paths[p] * w) for p, w in predecessors_iter(G, u, weight=True))
+            paths[u] = sum(paths[p] * w for p, w in predecessors_iter(G, u, weight=True))
         else:
             paths[u] = sum(paths[p] for p in predecessors_iter(G, u))
-        next_level.update(set(s for s in successors_iter(G, u)))
+        next_level.update(set(s for s in successors_iter(G, u, weight=False)))
     if next_level:
         count_simple_paths(G, predecessors_iter, successors_iter, next_level, paths)

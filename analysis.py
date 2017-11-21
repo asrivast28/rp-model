@@ -17,13 +17,13 @@ def update_path_centrality(G, P_s, P_t, centrality, vertex=None):
     # Compute the number of paths from sources to every vertex: complexity
     first_level = set()
     for s in np.where(P_s)[0] if vertex is None else [vertex]:
-        first_level.update(n for n in utils.forward_iter(G, s))
+        first_level.update(n for n in utils.forward_iter(G, s, weight=False))
     utils.count_simple_paths(G, utils.reverse_iter, utils.forward_iter, first_level, P_s)
 
     # Compute the number of paths from every vertex to targets: generality
     first_level = set()
     for t in np.where(P_t)[0] if vertex is None else [vertex]:
-        first_level.update(n for n in utils.reverse_iter(G, t))
+        first_level.update(n for n in utils.reverse_iter(G, t, weight=False))
     utils.count_simple_paths(G, utils.forward_iter, utils.reverse_iter, first_level, P_t)
 
     # Multiply complexity and generality to get the path centrality

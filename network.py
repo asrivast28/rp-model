@@ -38,7 +38,7 @@ def rp_model(S, M, T, alpha, d_in, out):
     @return  A nx.DiGraph instance of the generated network.
     """
     # Create an empty directed network
-    G = nx.DiGraph(weights=False)
+    G = nx.DiGraph(weights=True)
     # Add all the vertices to the network
     V = S + M + T
     vertextype = utils.datatype(V)
@@ -50,8 +50,13 @@ def rp_model(S, M, T, alpha, d_in, out):
     # Intermediate ranks array
     inter_ranks = np.zeros(M, dtype=vertextype)
     inter_indices = np.arange(M)
-    # Create connections for the M intermediates
-    for m in xrange(M):
+
+    k = float(d_in())
+    G.add_weighted_edges_from((s, S, k/S) for s in xrange(S))
+    source_ranks = source_ranks + 1
+
+    # Create connections for rest of the (M-1) intermediates
+    for m in xrange(1, M):
         # Increase source ranks by one
         # for calculating the probabilities
         source_ranks = source_ranks + 1
@@ -73,7 +78,7 @@ def rp_model(S, M, T, alpha, d_in, out):
         probabilities = numerators / np.sum(numerators)
         # Pick unique source vertices and add incoming edges from them
         for u in np.random.choice(S + M, size=d_in(), replace=False, p=probabilities):
-            G.add_edge(u, S + m)
+            G.add_edge(u, S + m, weight=1.0)
 
     # Increase ranks by one for calculating the probabilities
     source_ranks = source_ranks + 1
@@ -93,14 +98,14 @@ def rp_model(S, M, T, alpha, d_in, out):
     for t in xrange(T):
         # Pick unique source vertices and add incoming edges from them
         for u in np.random.choice(S + M, size=d_in(), replace=False, p=probabilities):
-            G.add_edge(u, S + M + t)
+            G.add_edge(u, S + M + t, weight=1.0)
 
     source = (vertex < S)
     source[list(s for s in xrange(S) if G.out_degree(s) == 0)] = False
     target = (vertex >= (S + M))
     if out is not None:
         with open('%s_links.txt'%out, 'wb') as elf:
-            nx.write_edgelist(G, elf, data=False)
+            nx.write_weighted_edgelist(G, elf)
         with open('%s_sources.txt'%out, 'wb') as sf:
             sf.write('\n'.join(str(s) for s in np.where(source)[0]))
         with open('%s_targets.txt'%out, 'wb') as tf:
@@ -133,7 +138,7 @@ def flatten(G, source, target, weights=True, datatype=np.uint64):
     for s in np.where(source)[0]:
         P_s.fill(0)
         P_s[s] = 1
-        utils.count_simple_paths(G, utils.reverse_iter, utils.forward_iter, set(n for n in utils.forward_iter(G, s)), P_s)
+        utils.count_simple_paths(G, utils.reverse_iter, utils.forward_iter, set(n for n in utils.forward_iter(G, s, weight=False)), P_s)
         if weights:
             G_f.add_weighted_edges_from((s, t, P_s[t]) for t in targets)
         else:
