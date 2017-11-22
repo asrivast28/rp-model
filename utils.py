@@ -1,4 +1,6 @@
 import igraph as ig
+from itertools import izip
+
 
 def datatype(value_max):
     """
@@ -11,37 +13,20 @@ def datatype(value_max):
     dtype_max.insert(0, 0)
     return all_dtypes[bisect(dtype_max, value_max) - 1]
 
-def forward_iter(G, n, weight=True):
-    """
-    @brief  Forward neighbor iterator for a node in ig.Graph
-    """
-    if weight:
-        return [(G.es[e].target, G.es[e]['weight']) for e in G.incident(n, mode=ig.OUT)]
-    else:
-        return [G.es[e].target for e in G.incident(n, mode=ig.OUT)]
-
-def reverse_iter(G, n, weight=True):
-    """
-    @brief  Reverse neighbor iterator for a node in ig.Graph
-    """
-    if weight:
-        return [(G.es[e].source, G.es[e]['weight']) for e in G.incident(n, mode=ig.IN)]
-    else:
-        return [G.es[e].source for e in G.incident(n, mode=ig.IN)]
-
-def count_simple_paths(G, predecessors_iter, successors_iter, sources, paths):
+def count_simple_paths(G, sources, predecessor, successor, paths):
     """
     @brief  Counts the number of simple paths from the source vertices in the network.
-    
-    @param G                  ig.Graph representation of the network.
-    @param predecessors_iter  Iterator provider over predecessors of a vertex in the network.
-    @param successors_iter    Iterator provider over successors of a vertex in the network.
-    @param sources            Source vertices in the network.
-    @param paths              Array of the number of simple paths from the sources to every vertex.
+
+    @param G            ig.Graph representation of the network.
+    @param sources      Source vertices in the network.
+    @param predecessor  Mode for finding predecessor vertices in the network.
+    @param successor    Mode for finding successor vertices in the network.
+    @param paths        Array of the number of simple paths from the sources to every vertex.
     """
+    weights = G.es['weight']
     while sources:
         next_level = set()
         for u in sources:
-            paths[u] = sum((paths[p] * w) for p, w in predecessors_iter(G, u, weight=True))
-            next_level.update(set(s for s in successors_iter(G, u, weight=False)))
+            paths[u] = sum([paths[v] * weights[e] for v, e in izip(G.neighbors(u, mode=predecessor), G.incident(u, mode=predecessor))])
+            next_level.update(G.neighbors(u, mode=successor))
         sources = next_level

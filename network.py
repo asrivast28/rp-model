@@ -38,7 +38,7 @@ def rp_model(S, M, T, alpha, d_in, out):
     V = S + M + T
     vertextype = utils.datatype(V)
     # Create a directed network
-    G = ig.Graph(V, directed=True)
+    G = ig.Graph(V, directed=True, edge_attrs={'weight':[]})
 
     # Source ranks array
     source_ranks = np.arange(S, dtype=vertextype)
@@ -108,7 +108,7 @@ def rp_model(S, M, T, alpha, d_in, out):
             tf.write('\n'.join(str(t) for t in np.where(target)[0]))
     return G, source, target
 
-def flatten(G, source, target, datatype=np.uint64):
+def flatten(G, source, target, datatype=np.float64):
     """
     @brief  Flattens the given dependency network.
 
@@ -131,7 +131,7 @@ def flatten(G, source, target, datatype=np.uint64):
     for s in np.where(source)[0]:
         P_s.fill(0)
         P_s[s] = 1
-        utils.count_simple_paths(G, utils.reverse_iter, utils.forward_iter, set(n for n in utils.forward_iter(G, s, weight=False)), P_s)
+        utils.count_simple_paths(G, G.neighbors(s, mode=ig.OUT), ig.IN, ig.OUT, P_s)
         G_f.add_edges((s, t) for t in targets)
         weight = np.append(weight, [P_s[t] for t in targets])
     G_f.es['weight'] = weight
