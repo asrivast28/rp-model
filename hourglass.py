@@ -56,7 +56,7 @@ def properties(argv):
     P, C = analysis.core_vertices(G, source, target, args.tau, datatype=np.float64)
 
     # Get the flattened network corresponding to the original network
-    G_f = network.flatten(G, source, target, weights=(P > 50000), datatype=np.float64)
+    G_f = network.flatten(G, source, target, datatype=np.float64)
     # Get the core vertices for the flattened network
     P_f, C_f = analysis.core_vertices(G_f, source, target, args.tau, datatype=np.float64)
 

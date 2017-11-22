@@ -1,4 +1,4 @@
-import networkx as nx
+import igraph as ig
 import numpy as np
 
 import utils
@@ -10,18 +10,15 @@ def read(filename):
 
     @param filename  Name of the file to be read.
 
-    @return  A nx.DiGraph instance of the read network.
+    @return  A ig.Graph instance of the read network.
     """
     # initialize a graph
-    G = nx.DiGraph(weights=False)
     # with open('centrality_test,txt', 'rb') as f:
-    with open(filename, 'rb') as f:
-        for edge in f.xreadlines():
-            if not edge.startswith('%'):
-                G.add_edge(*tuple(int(u) for u in edge.split()))
-    vertex = np.arange(G.number_of_nodes(), dtype=utils.datatype(G.number_of_nodes()))
-    source = np.vectorize(lambda v : G.in_degree(v) == 0, otypes=[np.bool])(vertex)
-    target = np.vectorize(lambda v : G.out_degree(v) == 0, otypes=[np.bool])(vertex)
+    with open(filename, 'rb') as elf:
+        G = ig.Graph.Read_Edgelist(elf)
+    vertex = np.arange(G.vcount(), dtype=utils.datatype(G.vcount()))
+    source = np.vectorize(lambda v : G.degree(v, mode=ig.IN) == 0, otypes=[np.bool])(vertex)
+    target = np.vectorize(lambda v : G.degree(v, mode=ig.OUT) == 0, otypes=[np.bool])(vertex)
     return G, source, target
 
 def rp_model(S, M, T, alpha, d_in, out):
@@ -35,15 +32,13 @@ def rp_model(S, M, T, alpha, d_in, out):
     @param d_in   Function that generates in-degrees.
     @param out    Prefix of the files to which the network is written.
 
-    @return  A nx.DiGraph instance of the generated network.
+    @return  A ig.Graph instance of the generated network.
     """
-    # Create an empty directed network
-    G = nx.DiGraph(weights=False)
     # Add all the vertices to the network
     V = S + M + T
     vertextype = utils.datatype(V)
-    vertex = np.arange(V, dtype=vertextype)
-    G.add_nodes_from(vertex)
+    # Create a directed network
+    G = ig.Graph(V, directed=True)
 
     # Source ranks array
     source_ranks = np.arange(S, dtype=vertextype)
@@ -95,48 +90,44 @@ def rp_model(S, M, T, alpha, d_in, out):
         for u in np.random.choice(S + M, size=d_in(), replace=False, p=probabilities):
             G.add_edge(u, S + M + t)
 
+    vertex = np.arange(V, dtype=vertextype)
     source = (vertex < S)
-    source[list(s for s in xrange(S) if G.out_degree(s) == 0)] = False
+    source[list(s for s in xrange(S) if G.degree(s, mode=ig.OUT) == 0)] = False
     target = (vertex >= (S + M))
     if out is not None:
         with open('%s_links.txt'%out, 'wb') as elf:
-            nx.write_edgelist(G, elf, data=False)
+            G.write_edgelist(elf)
         with open('%s_sources.txt'%out, 'wb') as sf:
             sf.write('\n'.join(str(s) for s in np.where(source)[0]))
         with open('%s_targets.txt'%out, 'wb') as tf:
             tf.write('\n'.join(str(t) for t in np.where(target)[0]))
     return G, source, target
 
-def flatten(G, source, target, weights=True, datatype=np.uint64):
+def flatten(G, source, target, datatype=np.uint64):
     """
     @brief  Flattens the given dependency network.
 
-    @param G         nx.DiGraph representation of the network.
+    @param G         ig.Graph representation of the network.
     @param source    NumPy array of type bool with 1 for every source vertex.
     @param target    NumPy array of type bool with 1 for every target vertex.
     @param datatype  NumPy datatype provided as a hint for storage.
 
-    @return  Weighted nx.DiGraph or nx.MultiDiGraph representation of the flattened dependency network.
+    @return  Weighted ig.Graph representation of the flattened dependency network.
     """
-    if weights:
-        # Create a weighted directed network
-        G_f = nx.DiGraph(weights=True)
-    else:
-        # Create a directed flat network which allows parallel edges
-        G_f = nx.MultiDiGraph(weights=False)
+    # Create a weighted directed network
+    G_f = ig.Graph(directed=True, edge_attrs={'weight' : []})
     # Add the same nodes as the original network
-    G_f.add_nodes_from(xrange(G.number_of_nodes()))
+    G_f.add_vertices(G.vcount())
 
     # Create the flat dependency network
-    P_s = np.empty(G.number_of_nodes(), dtype=datatype)
+    P_s = np.empty(G.vcount(), dtype=datatype)
     targets = np.where(target)[0]
+    weight = np.array([])
     for s in np.where(source)[0]:
         P_s.fill(0)
         P_s[s] = 1
         utils.count_simple_paths(G, utils.reverse_iter, utils.forward_iter, set(n for n in utils.forward_iter(G, s)), P_s)
-        if weights:
-            G_f.add_weighted_edges_from((s, t, P_s[t]) for t in targets)
-        else:
-            for t in targets:
-                G_f.add_edges_from((s, t) for p in xrange(int(P_s[t])))
+        G_f.add_edges((s, t) for t in targets)
+        weight = np.append(weight, [P_s[t] for t in targets])
+    G_f.es['weight'] = weight
     return G_f

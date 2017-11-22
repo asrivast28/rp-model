@@ -1,3 +1,5 @@
+import igraph as ig
+
 def datatype(value_max):
     """
     @brief  Returns the unsigned NumPy datatype suitable for storing value_max.
@@ -11,42 +13,38 @@ def datatype(value_max):
 
 def forward_iter(G, n, weight=False):
     """
-    @brief  Forward neighbor iterator for a node in nx.DiGraph or nx.MultiDiGraph
+    @brief  Forward neighbor iterator for a node in ig.Graph
     """
     if weight:
-        for u, v, d in G.out_edges_iter(n, data=True):
-            yield v, d['weight']
+        return [(G.es[e].target, G.es[e]['weight']) for e in G.incident(n, mode=ig.OUT)]
     else:
-        for u, v in G.out_edges_iter(n, data=False):
-            yield v
+        return [G.es[e].target for e in G.incident(n, mode=ig.OUT)]
 
 def reverse_iter(G, n, weight=False):
     """
-    @brief  Reverse neighbor iterator for a node in nx.DiGraph or nx.MultiDiGraph
+    @brief  Reverse neighbor iterator for a node in ig.Graph
     """
     if weight:
-        for u, v, d in G.in_edges_iter(n, data=True):
-            yield u, d['weight']
+        return [(G.es[e].source, G.es[e]['weight']) for e in G.incident(n, mode=ig.IN)]
     else:
-        for u, v in G.in_edges_iter(n, data=False):
-            yield u
+        return [G.es[e].source for e in G.incident(n, mode=ig.IN)]
 
 def count_simple_paths(G, predecessors_iter, successors_iter, sources, paths):
     """
     @brief  Counts the number of simple paths from the source vertices in the network.
     
-    @param G                  nx.DiGraph or nx.MultiDiGraph representation of the network.
+    @param G                  ig.Graph representation of the network.
     @param predecessors_iter  Iterator provider over predecessors of a vertex in the network.
     @param successors_iter    Iterator provider over successors of a vertex in the network.
     @param sources            Source vertices in the network.
     @param paths              Array of the number of simple paths from the sources to every vertex.
     """
-    next_level = set()
-    for u in sources:
-        if G.graph['weights']:
-            paths[u] = sum((paths[p] * w) for p, w in predecessors_iter(G, u, weight=True))
-        else:
-            paths[u] = sum(paths[p] for p in predecessors_iter(G, u))
-        next_level.update(set(s for s in successors_iter(G, u)))
-    if next_level:
-        count_simple_paths(G, predecessors_iter, successors_iter, next_level, paths)
+    while sources:
+        next_level = set()
+        for u in sources:
+            if G.is_weighted():
+                paths[u] = sum((paths[p] * w) for p, w in predecessors_iter(G, u, weight=True))
+            else:
+                paths[u] = sum(paths[p] for p in predecessors_iter(G, u))
+            next_level.update(set(s for s in successors_iter(G, u)))
+        sources = next_level
