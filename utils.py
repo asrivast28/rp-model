@@ -11,7 +11,7 @@ def datatype(value_max):
     dtype_max.insert(0, 0)
     return all_dtypes[bisect(dtype_max, value_max) - 1]
 
-def forward_iter(G, n, weight=False):
+def forward_iter(G, n, weight=True):
     """
     @brief  Forward neighbor iterator for a node in ig.Graph
     """
@@ -20,7 +20,7 @@ def forward_iter(G, n, weight=False):
     else:
         return [G.es[e].target for e in G.incident(n, mode=ig.OUT)]
 
-def reverse_iter(G, n, weight=False):
+def reverse_iter(G, n, weight=True):
     """
     @brief  Reverse neighbor iterator for a node in ig.Graph
     """
@@ -42,9 +42,6 @@ def count_simple_paths(G, predecessors_iter, successors_iter, sources, paths):
     while sources:
         next_level = set()
         for u in sources:
-            if G.is_weighted():
-                paths[u] = sum((paths[p] * w) for p, w in predecessors_iter(G, u, weight=True))
-            else:
-                paths[u] = sum(paths[p] for p in predecessors_iter(G, u))
-            next_level.update(set(s for s in successors_iter(G, u)))
+            paths[u] = sum((paths[p] * w) for p, w in predecessors_iter(G, u, weight=True))
+            next_level.update(set(s for s in successors_iter(G, u, weight=False)))
         sources = next_level
