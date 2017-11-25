@@ -39,16 +39,14 @@ def remove_vertex(G, vertex, source, target, in_degree, out_degree):
     @param in_degree   NumPy array containing in-degree for every vertex.
     @param out_degree  NumPy array containing out-degree for every vertex.
     """
-    es = G.es
-    for v in G.neighbors(vertex, mode=ig.IN):
-        out_degree[v] -= 1
-    for v in G.neighbors(vertex, mode=ig.OUT):
-        in_degree[v] -= 1
+    for v in vertex:
+        out_degree[G.neighbors(v, mode=ig.IN)] -= 1
+        in_degree[G.neighbors(v, mode=ig.OUT)] -= 1
+        G.delete_edges([e for e in G.incident(v, mode=ig.ALL)])
     in_degree[vertex] = 0
     out_degree[vertex] = 0
     source[source & (out_degree == 0)] = False
     target[target & (in_degree == 0)] = False
-    G.delete_edges([e for e in G.incident(vertex, mode=ig.ALL)])
 
 def core_vertices(G, source, target, tau, datatype=np.float64):
     """
@@ -118,12 +116,12 @@ def core_vertices(G, source, target, tau, datatype=np.float64):
                 else:
                     updates = False
             candidate_vertex = PES[0]
-        for vertex in candidate_vertex:
-            P_s[vertex] = 0
-            P_t[vertex] = 0
-            update_path_centrality(G, P_s, P_t, centrality, [vertex])
-            remove_vertex(G, vertex, source, target, in_degree, out_degree)
-        C.append(candidate_vertex if len(candidate_vertex) > 1 else candidate_vertex.pop())
+        candidate_vertex = sorted(list(candidate_vertex))
+        P_s[candidate_vertex] = 0
+        P_t[candidate_vertex] = 0
+        update_path_centrality(G, P_s, P_t, centrality, candidate_vertex)
+        remove_vertex(G, candidate_vertex, source, target, in_degree, out_degree)
+        C.append(candidate_vertex if len(candidate_vertex) > 1 else candidate_vertex[0])
 
         P_R = P - np.sum(source * centrality)
     return P, C
