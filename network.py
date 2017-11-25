@@ -21,7 +21,7 @@ def read(filename):
     target = np.vectorize(lambda v : G.degree(v, mode=ig.OUT) == 0, otypes=[np.bool])(vertex)
     return G, source, target
 
-def rp_model(S, M, T, alpha, d_in, out):
+def rp_model(S, M, T, alpha, d_in, out, datatype=np.float64):
     """
     @brief  Creates a network using the RP-model.
 
@@ -38,7 +38,7 @@ def rp_model(S, M, T, alpha, d_in, out):
     V = S + M + T
     vertextype = utils.datatype(V)
     # Create a directed network
-    G = ig.Graph(V, directed=True, edge_attrs={'weight':[]})
+    G = ig.Graph(V, directed=True)
 
     # Source ranks array
     source_ranks = np.arange(S, dtype=vertextype)
@@ -48,7 +48,6 @@ def rp_model(S, M, T, alpha, d_in, out):
 
     k = float(d_in())
     G.add_edges((s, S) for s in xrange(S))
-    G.es['weight'] = k/S
 
     # Create connections for rest of the (M-1) intermediates
     for m in xrange(1, M):
@@ -73,7 +72,7 @@ def rp_model(S, M, T, alpha, d_in, out):
         probabilities = numerators / np.sum(numerators)
         # Pick unique source vertices and add incoming edges from them
         for u in np.random.choice(S + M, size=d_in(), replace=False, p=probabilities):
-            G.add_edge(u, S + m, weight=1.0)
+            G.add_edge(u, S + m)
 
     # Increase ranks by one for calculating the probabilities
     source_ranks = source_ranks + 1
@@ -93,7 +92,11 @@ def rp_model(S, M, T, alpha, d_in, out):
     for t in xrange(T):
         # Pick unique source vertices and add incoming edges from them
         for u in np.random.choice(S + M, size=d_in(), replace=False, p=probabilities):
-            G.add_edge(u, S + M + t, weight=1.0)
+            G.add_edge(u, S + M + t)
+
+    weights = np.ones(G.ecount(), dtype=datatype)
+    weights[np.arange(S)] = k/S
+    G['weights'] = weights
 
     vertex = np.arange(V, dtype=vertextype)
     source = (vertex < S)
@@ -120,19 +123,19 @@ def flatten(G, source, target, datatype=np.float64):
     @return  Weighted ig.Graph representation of the flattened dependency network.
     """
     # Create a weighted directed network
-    G_f = ig.Graph(directed=True, edge_attrs={'weight' : []})
+    G_f = ig.Graph(directed=True)
     # Add the same nodes as the original network
     G_f.add_vertices(G.vcount())
 
     # Create the flat dependency network
     P_s = np.empty(G.vcount(), dtype=datatype)
     targets = np.where(target)[0]
-    weight = np.array([])
+    weights = []
     for s in np.where(source)[0]:
         P_s.fill(0)
         P_s[s] = 1
         utils.count_simple_paths(G, G.neighbors(s, mode=ig.OUT), ig.IN, ig.OUT, P_s)
         G_f.add_edges((s, t) for t in targets)
-        weight = np.append(weight, [P_s[t] for t in targets])
-    G_f.es['weight'] = weight
+        weights.extend(P_s[t] for t in targets)
+    G_f['weights'] = np.array(weights, dtype=datatype)
     return G_f

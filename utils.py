@@ -24,7 +24,7 @@ def count_simple_paths(G, sources, predecessor, successor, paths):
     @param successor    Mode for finding successor vertices in the network.
     @param paths        Array of the number of simple paths from the sources to every vertex.
     """
-    weights = np.array(G.es['weight'])
+    weights = G['weights']
     while sources:
         next_level = set()
         for u in sources:

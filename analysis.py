@@ -32,7 +32,7 @@ def update_path_centrality(G, P_s, P_t, centrality, vertex=None):
 
 def remove_vertex(G, vertex, source, target, in_degree, out_degree):
     """
-    @brief  Removes all the edges to and from the given vertex in the given network.
+    @brief  Sets weights for all the edges to and from the given vertices to zero.
 
     @param G           ig.Graph representation of the network.
     @param vertex      Vertex to be removed from the network.
@@ -42,7 +42,7 @@ def remove_vertex(G, vertex, source, target, in_degree, out_degree):
     for v in vertex:
         out_degree[G.neighbors(v, mode=ig.IN)] -= 1
         in_degree[G.neighbors(v, mode=ig.OUT)] -= 1
-        G.delete_edges([e for e in G.incident(v, mode=ig.ALL)])
+        G['weights'][list(e for e in G.incident(v, mode=ig.ALL))] = 0
     in_degree[vertex] = 0
     out_degree[vertex] = 0
     source[source & (out_degree == 0)] = False
@@ -61,7 +61,7 @@ def core_vertices(G, source, target, tau, datatype=np.float64):
     @return  List containing all the core vertices.
     """
     # Copy objects that are going to be modified
-    G = G.copy()
+    weights = np.copy(G['weights'])
     source = np.copy(source)
     target = np.copy(target)
 
@@ -124,4 +124,7 @@ def core_vertices(G, source, target, tau, datatype=np.float64):
         C.append(candidate_vertex if len(candidate_vertex) > 1 else candidate_vertex[0])
 
         P_R = P - np.sum(source * centrality)
+
+    # Restore weights to their original value
+    G['weights'] = weights
     return P, C
