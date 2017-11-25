@@ -69,7 +69,15 @@ if __name__ == '__main__':
     if len(sys.argv) == 1:
         properties(['--help'])
     else:
+        import cProfile, pstats, StringIO
+        pr = cProfile.Profile()
+        pr.enable()
         P, C, P_f, C_f, H = properties(sys.argv[1:])
+        pr.disable()
         print 'Original_network\nTotal_paths: %d\nCore_size: %d'%(P, C)
         print 'Flat_network\nTotal_paths: %d\nCore_size: %d'%(P_f, C_f)
         print 'H_score: %f'%H
+        s = StringIO.StringIO()
+        ps = pstats.Stats(pr, stream=s).sort_stats('cumulative')
+        ps.print_stats()
+        print s.getvalue()
