@@ -1,5 +1,6 @@
 import igraph as ig
 from itertools import izip
+import numpy as np
 
 
 def datatype(value_max):
@@ -23,10 +24,10 @@ def count_simple_paths(G, sources, predecessor, successor, paths):
     @param successor    Mode for finding successor vertices in the network.
     @param paths        Array of the number of simple paths from the sources to every vertex.
     """
-    weights = G.es['weight']
+    weights = np.array(G.es['weight'])
     while sources:
         next_level = set()
         for u in sources:
-            paths[u] = sum([paths[v] * weights[e] for v, e in izip(G.neighbors(u, mode=predecessor), G.incident(u, mode=predecessor))])
+            paths[u] = np.dot(paths[G.neighbors(u, mode=predecessor)], weights[G.incident(u, mode=predecessor)])
             next_level.update(G.neighbors(u, mode=successor))
         sources = next_level
