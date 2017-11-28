@@ -52,14 +52,15 @@ def properties(argv):
         intermediates = args.vertices - (args.sources + args.targets)
         G, source, target = network.rp_model(args.sources, intermediates, args.targets, args.alpha, args.d_in, args.out)
 
+    G_T = np.transpose(G)
     # Get the flattened network corresponding to the original network
-    G_f = network.flatten(G, source, target, datatype=np.float64)
+    G_f = network.flatten(G, G_T, source, target, datatype=np.float64)
 
     # Get the core vertices for the original network
-    P, C = analysis.core_vertices(G, source, target, args.tau, datatype=np.float64)
+    P, C = analysis.core_vertices(G, G_T, source, target, args.tau, datatype=np.float64)
 
     # Get the core vertices for the flattened network
-    P_f, C_f = analysis.core_vertices(G_f, source, target, args.tau, datatype=np.float64)
+    P_f, C_f = analysis.core_vertices(G_f, np.transpose(G_f), source, target, args.tau, datatype=np.float64)
 
     # H-score of the original network
     H = 1 - (float(len(C)) / len(C_f))

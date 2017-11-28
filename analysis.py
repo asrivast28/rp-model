@@ -4,11 +4,12 @@ import numpy as np
 import utils
 
 
-def update_path_centrality(G, P_s, P_t, centrality, vertex=None):
+def update_path_centrality(G, G_T, P_s, P_t, centrality, vertex=None):
     """
     @brief  Updates path centrality values for the vertices in a network.
 
     @param G           np.array representation of the network's weighted adjacency matrix.
+    @param G_T         Transpose of G.
     @param P_s         np.array with 1 for every source vertex and 0 for other vertices.
     @param P_s         np.array with 1 for every target vertex and 0 for other vertices.
     @param centrality  np.array containg centrality value for every vertex in the given network.
@@ -18,22 +19,23 @@ def update_path_centrality(G, P_s, P_t, centrality, vertex=None):
     first_level = set()
     for s in np.where(P_s)[0] if vertex is None else vertex:
         first_level.update(np.nonzero(G[s])[0])
-    utils.count_simple_paths(G, G.T, first_level, P_s)
+    utils.count_simple_paths(G, G_T, first_level, P_s)
 
     # Compute the number of paths from every vertex to targets: generality
     first_level = set()
     for t in np.where(P_t)[0] if vertex is None else vertex:
-        first_level.update(np.nonzero(G.T[t])[0])
-    utils.count_simple_paths(G.T, G, first_level, P_t)
+        first_level.update(np.nonzero(G_T[t])[0])
+    utils.count_simple_paths(G_T, G, first_level, P_t)
 
     # Multiply complexity and generality to get the path centrality
     np.multiply(P_s, P_t, out=centrality)
 
-def remove_vertex(G, vertex, source, target, in_degree, out_degree):
+def remove_vertex(G, G_T, vertex, source, target, in_degree, out_degree):
     """
     @brief  Sets weights for all the edges to and from the given vertices to zero.
 
     @param G           np.array representation of the network's weighted adjacency matrix.
+    @param G_T         Transpose of G.
     @param vertex      Vertex to be removed from the network.
     @param in_degree   np.array containing in-degree for every vertex.
     @param out_degree  np.array containing out-degree for every vertex.
@@ -41,18 +43,19 @@ def remove_vertex(G, vertex, source, target, in_degree, out_degree):
     for v in vertex:
         in_degree[np.nonzero(G[v])[0]] -= 1
         G[v] = 0
-        out_degree[np.nonzero(G.T[v])[0]] -= 1
-        G.T[v] = 0
+        out_degree[np.nonzero(G_T[v])[0]] -= 1
+        G_T[v] = 0
     in_degree[vertex] = 0
     out_degree[vertex] = 0
     source[source & (out_degree == 0)] = False
     target[target & (in_degree == 0)] = False
 
-def core_vertices(G, source, target, tau, datatype=np.float64):
+def core_vertices(G, G_T, source, target, tau, datatype=np.float64):
     """
     @brief  Greedily finds core vertices in the given network.
 
     @param G         np.array representation of the network's weighted adjacency matrix.
+    @param G_T       Transpose of G.
     @param source    np.array of type bool with 1 for every source vertex.
     @param target    np.array of type bool with 1 for every target vertex.
     @param tau       Fraction of S-T paths to be covered by the core vertices.
@@ -75,7 +78,7 @@ def core_vertices(G, source, target, tau, datatype=np.float64):
     P_t = target.astype(datatype)
     # Compute initial path centralities
     centrality = np.empty(source.size, datatype)
-    update_path_centrality(G, P_s, P_t, centrality)
+    update_path_centrality(G, G_T, P_s, P_t, centrality)
 
     # Compute the initial number of S-T paths
     # Same as the number of paths exiting from the sources
@@ -99,7 +102,7 @@ def core_vertices(G, source, target, tau, datatype=np.float64):
                 _P_t = np.copy(P_t)
                 _P_s[vertex] = 0
                 _P_t[vertex] = 0
-                update_path_centrality(G, _P_s, _P_t, centrality, [vertex])
+                update_path_centrality(G, G_T, _P_s, _P_t, centrality, [vertex])
                 neighbors = set([vertex])
                 for other in candidate_vertices:
                     if other != vertex and centrality[other] == 0:
@@ -118,8 +121,8 @@ def core_vertices(G, source, target, tau, datatype=np.float64):
         candidate_vertex = sorted(list(candidate_vertex))
         P_s[candidate_vertex] = 0
         P_t[candidate_vertex] = 0
-        update_path_centrality(G, P_s, P_t, centrality, candidate_vertex)
-        remove_vertex(G, candidate_vertex, source, target, in_degree, out_degree)
+        update_path_centrality(G, G_T, P_s, P_t, centrality, candidate_vertex)
+        remove_vertex(G, G_T, candidate_vertex, source, target, in_degree, out_degree)
         C.append(candidate_vertex if len(candidate_vertex) > 1 else candidate_vertex[0])
 
         P_R = P - np.sum(source * centrality)

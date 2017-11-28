@@ -109,11 +109,12 @@ def rp_model(S, M, T, alpha, d_in, out, datatype=np.float64):
             tf.write('\n'.join(str(t) for t in np.where(target)[0]))
     return G, source, target
 
-def flatten(G, source, target, datatype=np.float64):
+def flatten(G, G_T, source, target, datatype=np.float64):
     """
     @brief  Flattens the given dependency network.
 
     @param G         np.array representation of the network's weighted adjacency matrix.
+    @param G_T       Transpose of G.
     @param source    np.array of type bool with 1 for every source vertex.
     @param target    np.array of type bool with 1 for every target vertex.
     @param datatype  np.dtype provided as a hint for storage.
@@ -127,6 +128,6 @@ def flatten(G, source, target, datatype=np.float64):
     targets = np.where(target)[0]
     for s in np.where(source)[0]:
         G_f[s][s] = 1
-        utils.count_simple_paths(G, G.T, list(np.nonzero(G[s])[0]), G_f[s])
+        utils.count_simple_paths(G, G_T, list(np.nonzero(G[s])[0]), G_f[s])
         G_f[s][~target] = 0
     return G_f
