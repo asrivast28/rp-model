@@ -33,10 +33,10 @@ def remove_vertex(G, vertex, source, target, in_degree, out_degree):
     """
     @brief  Sets weights for all the edges to and from the given vertices to zero.
 
-    @param G           ig.Graph representation of the network.
+    @param G           np.array representation of the network's weighted adjacency matrix.
     @param vertex      Vertex to be removed from the network.
-    @param in_degree   NumPy array containing in-degree for every vertex.
-    @param out_degree  NumPy array containing out-degree for every vertex.
+    @param in_degree   np.array containing in-degree for every vertex.
+    @param out_degree  np.array containing out-degree for every vertex.
     """
     for v in vertex:
         in_degree[np.nonzero(G[v])[0]] -= 1
