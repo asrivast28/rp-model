@@ -18,14 +18,14 @@ def update_path_centrality(G, G_T, P_s, P_t, centrality, vertex=None):
     # Compute the number of paths from sources to every vertex: complexity
     first_level = set()
     for s in np.where(P_s)[0] if vertex is None else vertex:
-        first_level.update(np.nonzero(G[s])[0])
-    utils.count_simple_paths(G, G_T, first_level, P_s)
+        first_level.update(np.where(G[s])[0])
+    utils.count_simple_paths(G, G_T, np.array(sorted(first_level), dtype=np.int64), P_s)
 
     # Compute the number of paths from every vertex to targets: generality
     first_level = set()
     for t in np.where(P_t)[0] if vertex is None else vertex:
-        first_level.update(np.nonzero(G_T[t])[0])
-    utils.count_simple_paths(G_T, G, first_level, P_t)
+        first_level.update(np.where(G_T[t])[0])
+    utils.count_simple_paths(G_T, G, np.array(sorted(first_level), dtype=np.int64), P_t)
 
     # Multiply complexity and generality to get the path centrality
     np.multiply(P_s, P_t, out=centrality)
@@ -41,9 +41,9 @@ def remove_vertex(G, G_T, vertex, source, target, in_degree, out_degree):
     @param out_degree  np.array containing out-degree for every vertex.
     """
     for v in vertex:
-        in_degree[np.nonzero(G[v])[0]] -= 1
+        in_degree[np.where(G[v])[0]] -= 1
         G[v] = 0
-        out_degree[np.nonzero(G_T[v])[0]] -= 1
+        out_degree[np.where(G_T[v])[0]] -= 1
         G_T[v] = 0
     in_degree[vertex] = 0
     out_degree[vertex] = 0

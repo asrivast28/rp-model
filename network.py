@@ -128,6 +128,6 @@ def flatten(G, G_T, source, target, datatype=np.float64):
     targets = np.where(target)[0]
     for s in np.where(source)[0]:
         G_f[s][s] = 1
-        utils.count_simple_paths(G, G_T, list(np.nonzero(G[s])[0]), G_f[s])
+        utils.count_simple_paths(G, G_T, np.where(G[s])[0], G_f[s])
         G_f[s][~target] = 0
     return G_f

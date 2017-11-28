@@ -21,9 +21,6 @@ def count_simple_paths(G, G_T, sources, paths):
     @param sources   Source vertices in the network.
     @param paths     np.array containing the number of simple paths from the sources to every vertex.
     """
-    while sources:
-        next_level = set()
-        for u in sources:
-            paths[u] = np.dot(paths, G_T[u])
-            next_level.update(np.nonzero(G[u])[0])
-        sources = next_level
+    while len(sources) > 0:
+        paths[sources] = np.dot(paths, np.transpose(G_T[sources]))
+        sources = np.where(np.any(G[sources], axis=0))[0]
