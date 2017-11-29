@@ -1,4 +1,5 @@
 import argparse
+from math import exp
 import numpy as np
 
 import network
@@ -50,7 +51,8 @@ def properties(argv):
         G, source, target = network.read(args.file)
     else:
         intermediates = args.vertices - (args.sources + args.targets)
-        G, source, target = network.rp_model(args.sources, intermediates, args.targets, args.alpha, args.d_in, args.out)
+        d_in = lambda : int(round(args.sources * (args.d_in() + exp(-1.0 * args.alpha)) / (args.sources + exp(-1.0 * args.alpha))))
+        G, source, target = network.rp_model(args.sources, intermediates, args.targets, args.alpha, d_in, args.out)
 
     # Get the core vertices for the network
     P, C = analysis.core_vertices(G, source, target, args.tau, datatype=np.float64)
