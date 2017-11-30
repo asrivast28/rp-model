@@ -70,8 +70,11 @@ def rp_model(S, M, T, alpha, d_in, out, datatype=np.float64):
             numerators = (all_ranks > 0).astype(np.float)
         # Probability of connecting to every older vertex
         probabilities = numerators / np.sum(numerators)
+        k = d_in()
+        if k > S + m:
+            k = S + m
         # Pick unique source vertices and add incoming edges from them
-        for u in np.random.choice(S + M, size=d_in(), replace=False, p=probabilities):
+        for u in np.random.choice(S + M, size=k, replace=False, p=probabilities):
             G.add_edge(u, S + m)
 
     # Increase ranks by one for calculating the probabilities
@@ -90,8 +93,11 @@ def rp_model(S, M, T, alpha, d_in, out, datatype=np.float64):
 
     # Create connections for the T targets in a batch
     for t in xrange(T):
+        k = d_in()
+        if k > S + M:
+            k = S + M
         # Pick unique source vertices and add incoming edges from them
-        for u in np.random.choice(S + M, size=d_in(), replace=False, p=probabilities):
+        for u in np.random.choice(S + M, size=k, replace=False, p=probabilities):
             G.add_edge(u, S + M + t)
 
     weights = np.ones(G.ecount(), dtype=datatype)
