@@ -71,9 +71,14 @@ def rp_model(S, M, T, alpha, d_in, out):
             numerators = (all_ranks > 0).astype(np.float)
         # Probability of connecting to every older vertex
         probabilities = numerators / np.sum(numerators)
-        # Pick unique source vertices and add incoming edges from them
-        for u in np.random.choice(S + M, size=d_in(), replace=False, p=probabilities):
-            G.add_edge(u, S + m)
+        k = d_in()
+        if k < S + m:
+            # Pick unique source vertices and add incoming edges from them
+            for u in np.random.choice(S + M, size=k, replace=False, p=probabilities):
+                G.add_edge(u, S + m)
+        else:
+            for u in xrange(S + m):
+                G.add_edge(u, S + m)
 
     # Increase ranks by one for calculating the probabilities
     source_ranks = source_ranks + 1
@@ -91,9 +96,14 @@ def rp_model(S, M, T, alpha, d_in, out):
 
     # Create connections for the T targets in a batch
     for t in xrange(T):
-        # Pick unique source vertices and add incoming edges from them
-        for u in np.random.choice(S + M, size=d_in(), replace=False, p=probabilities):
-            G.add_edge(u, S + M + t)
+        k = d_in()
+        if k < S + M:
+            # Pick unique source vertices and add incoming edges from them
+            for u in np.random.choice(S + M, size=k, replace=False, p=probabilities):
+                G.add_edge(u, S + M + t)
+        else:
+            for u in xrange(S + M):
+                G.add_edge(u, S + M + t)
 
     source = (vertex < S)
     source[list(s for s in xrange(S) if G.out_degree(s) == 0)] = False
