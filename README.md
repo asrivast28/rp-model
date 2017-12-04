@@ -10,6 +10,7 @@ python hourglass.py --help
 ## Requirements
 * **[Python](https://www.python.org)** (tested with version 2.7)
 * **[NumPy](http://www.numpy.org)** (tested with version 1.11.0)
+* **[igraph](http://igraph.org/python/)** (tested with version 0.7)
 * **[NetworkX](https://networkx.github.io)** (tested with version 1.10)
 
 ## References
