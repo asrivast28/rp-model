@@ -1,4 +1,7 @@
-# RP-model
+# Network Generation using RP-model
+
+This generator was written for a project undertaken as part of the course CS 7280 - Network Science. The analysis performed using the code can be found in the report [here](report.pdf).
+
 This repository contains the code for generating a network using the RP-model proposed by Sabrin et al. [1].
 It can also be used for computing various hourglass network metrics for the generated network (or an existing network) e.g., Core Size, H-score, etc.
 The usage of this code can be printed by executing the following command.
